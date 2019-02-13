@@ -1,0 +1,14 @@
+<workunit schemaName="eor_remittance">
+    <invokers>
+        <invoker folderid="menucategory/treasury/epayment" role="MASTER" 
+            caption="Prepare Remittance" 
+            action="create"
+            index="2"
+            formTitle="New EOR Remittance"/>
+        <invoker type="formActions" caption="Submit" action="save" confirm="You are about to submit this remittance. Proceed?"/>
+   </invokers>
+   <code class="com.rameses.gov.epayment.models.EORRemittanceInitialModel" />
+    <pages>
+        <page template="com.rameses.gov.epayment.views.EORRemittanceInitialPage" />
+    </pages>
+</workunit>
