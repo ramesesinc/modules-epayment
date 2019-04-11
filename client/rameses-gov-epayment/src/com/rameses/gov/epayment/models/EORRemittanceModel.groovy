@@ -16,6 +16,11 @@ public class EORRemittanceModel extends CrudFormModel {
     @Service('EORRemittanceService')
     def svc; 
     
+    def numformat = new java.text.DecimalFormat('#,##0.0000'); 
+    def getFormattedAmount() {
+        return numformat.format(entity.amount ? entity.amount : 0.0); 
+    }    
+    
     def eorListHandler = [
         fetchList: { o->
             def m = [_schemaname: 'eor'];
@@ -38,17 +43,22 @@ public class EORRemittanceModel extends CrudFormModel {
         }
     ] as BasicListModel;
 
-    def validateFund() { 
+    void validateFund() { 
         if ( !selectedFund ) throw new Exception('Please select fund'); 
         
-        def p = [:]; 
-        p.handler = { o-> 
-            svc.updateValidation([ objid: selectedFund.objid, validation: o ]); 
-            fundListHandler.reload(); 
+        def m = [:];
+        m.fields = [
+            [caption: 'Validation Ref No', name:'refno', required:true],
+            [caption: 'Validation Ref Date', name:'refdate', required:true, datatype:'date'],            
+        ];
+        if(entity.validation) {
+            m.data = entity.validation;
         }
-        def op = Inv.lookupOpener('deposit_validation', p );
-        op.target = 'popup';
-        return op;
+        m.handler = { o->
+            svc.updateValidation([ objid: selectedFund.objid, validation: o ]); 
+            fundListHandler.reload();
+        };
+        Modal.show( "dynamic:form", m, [title:"Validate Deposit Slip"] );                
     }
     
     def assignBankAccount() { 
@@ -74,4 +84,13 @@ public class EORRemittanceModel extends CrudFormModel {
             binding.refresh();
         }
     }
+    
+    def listReports( inv ) {
+        def popupMenu = new PopupMenuOpener();
+        def list = Inv.lookupOpeners( inv.properties.category, [ entity: entity ]);
+        list.each{ 
+            popupMenu.add( it );
+        }
+        return popupMenu;
+    } 
 }

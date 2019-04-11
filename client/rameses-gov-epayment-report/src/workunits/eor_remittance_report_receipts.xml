@@ -1,0 +1,13 @@
+<workunit>
+    <invokers>
+       <invoker type="eor_remittance:reports" caption="Remittance Report By Receipts" action="preview" target="self" index="6"/>
+       
+       <invoker type="formActions" caption="Back" action="_close" mnemonic="b" shortcut="ctrl B" icon="images/toolbars/arrow_left.png"/>
+    </invokers>
+    
+    <code class="com.rameses.gov.epayment.report.models.EORRemittanceReportByReceiptModel"/>
+    
+    <pages>
+        <page name="report" template="com.rameses.osiris2.common.ui.ReportPreviewPage" /> 
+    </pages>   
+</workunit>

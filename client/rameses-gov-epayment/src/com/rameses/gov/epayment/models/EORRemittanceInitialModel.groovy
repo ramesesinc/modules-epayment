@@ -37,6 +37,9 @@ public class EORRemittanceInitialModel  extends CrudFormModel {
     ];
     
     def listHandler = [
+        isMultiSelect: {
+            return true;
+        },
         fetchList: { o->
             if( !partner ) return [];
             def m = [_schemaname: 'eor'];
@@ -44,31 +47,33 @@ public class EORRemittanceInitialModel  extends CrudFormModel {
             m.orderBy = "tracedate";
             return queryService.getList(m);
         },
-        isMultiSelect: {
-            return true;
-        },
         afterSelectionChange: {
-            entity.amount = listHandler.selectedValue.sum{ it.amount };
-            binding.refresh("amount");
+            entity.amount = listHandler.selectedValue.sum{ it.amount } 
+            if ( entity.amount == null ) entity.amount = 0.0; 
+            
+            binding.notifyDepends("total"); 
         }, 
         onOpenItem: { o, name-> 
             if ( !o ) return null;
             return Inv.lookupOpener('eor:open', [ entity: o]); 
         }           
     ] as BasicListModel;
+    
+    def numformat = new java.text.DecimalFormat('#,##0.0000'); 
+    def getFormattedAmount() {
+        return numformat.format(entity.amount ? entity.amount : 0.0); 
+    }
    
     def selectedPO;
     def resolveListHandler = [
-        fetchList: { o->
-            return [];
-        },
         isMultiSelect: {
             return true;
+        },
+        fetchList: { o->
+            return [];
         }
-        
     ] as BasicListModel;
-    
-    
+
     public void resolve() { 
         resolveListHandler.selectedValue?.each{ 
             onlineSvc.resolve( it ); 
@@ -88,6 +93,4 @@ public class EORRemittanceInitialModel  extends CrudFormModel {
         entity = remittanceSvc.create( entity );
         return Inv.lookupOpener("eor_remittance:open", [entity: entity ]);
     }
-    
-    
 }

@@ -1,0 +1,12 @@
+<workunit>
+    <invokers>
+       <invoker type="eor_remittance:reports" caption="Remittance Report By Fund" action="initReport" target="self" index="3"/>
+       <invoker type="formActions" caption="Back" action="_close" mnemonic="b" shortcut="ctrl B" icon="images/toolbars/arrow_left.png"/>
+    </invokers>
+    
+    <code class="com.rameses.gov.epayment.report.models.EORRemittanceReportFundModel"/>
+    
+    <pages>
+        <page name="report" template="com.rameses.gov.epayment.report.views.RemittanceReportFundPage" />
+    </pages>   
+</workunit>
