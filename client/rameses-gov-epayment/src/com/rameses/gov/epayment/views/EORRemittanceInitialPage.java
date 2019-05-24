@@ -50,10 +50,10 @@ public class EORRemittanceInitialPage extends javax.swing.JPanel {
         xFormPanel1.setCaptionWidth(120);
 
         xComboBox1.setCaption("Partner");
-        xComboBox1.setEmptyText("Select a Partner");
         xComboBox1.setExpression("#{ item.objid } #{item.name}");
         xComboBox1.setItems("partnerList");
         xComboBox1.setName("partner"); // NOI18N
+        xComboBox1.setEmptyText("Select a Partner");
         xComboBox1.setPreferredSize(new java.awt.Dimension(0, 20));
         xComboBox1.setRequired(true);
         xFormPanel1.add(xComboBox1);
@@ -63,6 +63,8 @@ public class EORRemittanceInitialPage extends javax.swing.JPanel {
         xDateField1.setRequired(true);
         xFormPanel1.add(xDateField1);
 
+        xDataTable1.setHandler("listHandler");
+        xDataTable1.setName("selectedItem"); // NOI18N
         xDataTable1.setColumns(new com.rameses.rcp.common.Column[]{
             new com.rameses.rcp.common.Column(new Object[]{
                 new Object[]{"name", "receiptno"}
@@ -200,8 +202,6 @@ public class EORRemittanceInitialPage extends javax.swing.JPanel {
                 , new Object[]{"typeHandler", new com.rameses.rcp.common.TextColumnHandler()}
             })
         });
-        xDataTable1.setHandler("listHandler");
-        xDataTable1.setName("selectedItem"); // NOI18N
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -222,6 +222,8 @@ public class EORRemittanceInitialPage extends javax.swing.JPanel {
 
         xTabbedPane1.addTab("EOR For Remittance", jPanel1);
 
+        xDataTable3.setHandler("resolveListHandler");
+        xDataTable3.setName("selectedPO"); // NOI18N
         xDataTable3.setColumns(new com.rameses.rcp.common.Column[]{
             new com.rameses.rcp.common.Column(new Object[]{
                 new Object[]{"name", "objid"}
@@ -299,12 +301,10 @@ public class EORRemittanceInitialPage extends javax.swing.JPanel {
                 , new Object[]{"typeHandler", new com.rameses.rcp.common.DecimalColumnHandler("#,##0.00", -1.0, -1.0, false, 2)}
             })
         });
-        xDataTable3.setHandler("resolveListHandler");
-        xDataTable3.setName("selectedPO"); // NOI18N
 
         xButton1.setDepends(new String[] {"selectedPO"});
-        xButton1.setImmediate(true);
         xButton1.setName("resolve"); // NOI18N
+        xButton1.setImmediate(true);
         xButton1.setText("Resolve");
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
@@ -338,10 +338,11 @@ public class EORRemittanceInitialPage extends javax.swing.JPanel {
 
         xFormPanel2.setCaptionVAlignment(com.rameses.rcp.constant.UIConstants.CENTER);
 
-        xLabel1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(180, 180, 180)));
         xLabel1.setCaption("Amount");
-        xLabel1.setExpression("#{ entity.amount }");
-        xLabel1.setFont(new java.awt.Font("Monospaced", 0, 16)); // NOI18N
+        xLabel1.setDepends(new String[] {"total"});
+        xLabel1.setExpression("#{formattedAmount}");
+        xLabel1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(180, 180, 180)));
+        xLabel1.setFont(new java.awt.Font("Monospaced", 0, 14)); // NOI18N
         xLabel1.setPreferredSize(new java.awt.Dimension(0, 20));
         xFormPanel2.add(xLabel1);
 

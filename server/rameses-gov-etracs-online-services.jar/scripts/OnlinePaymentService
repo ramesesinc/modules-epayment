@@ -20,6 +20,9 @@ class OnlinePaymentService   {
     @Env 
     def env; 
 
+    @Service 
+    def self; 
+
     @Service("EORService")
     def eorSvc;  
 
@@ -106,11 +109,13 @@ class OnlinePaymentService   {
             pass = true; 
         } 
         catch(Throwable t) { 
+            retval = null; 
+            
             def m = buildErrorInfo( t ); 
             println 'payment posting error '+ o.paymentrefid +' caused by: '+ m.errmsg; 
             m.objid = o.objid; 
-            m.txndate = o.txndate;
-            m.txntype = o.txntype;
+            m.txndate = o.txndate; 
+            m.txntype = o.txntype; 
             m.txntypename = o.info?.txntypename; 
             m.paymentrefid = o.paymentrefid; 
             m.amount = o.amount; 
@@ -121,16 +126,28 @@ class OnlinePaymentService   {
             m.refno = o.info?.refno;
             m.origin = o.info?.origin; 
             m.paymentorder = po; 
-            unpostedpayment_db.create( m );  
-            retval = null; 
+            self.logUnpostedPayment( m ); 
+
+            if ( t instanceof Exception ) {
+                throw (Exception) t; 
+            } 
+            else { 
+                throw new RuntimeException( t ); 
+            } 
         } 
         
         if ( pass ) { 
             poEm.find([ objid: po.objid ]).delete(); 
             unpostedpayment_db.find([ paymentrefid: po.objid ]).delete(); 
-        }
+        } 
         return retval;
     }
+
+    @Async 
+    @ProxyMethod 
+    public void logUnpostedPayment( data ) { 
+        unpostedpayment_db.create( data );  
+    } 
 
     @ProxyMethod
     public def getReceipt( def o ) {
