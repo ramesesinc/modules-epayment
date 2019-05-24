@@ -1,0 +1,11 @@
+<schema adapter="gdx">
+	<element tablename="api_account">
+		<field name="objid" primary="true"/> 
+		<field name="state" required="true"/> 
+		<field name="dtfiled" required="true"/> 
+		<field name="filedby" required="true"/> 
+		<field name="name" required="true"/> 
+		<field name="secretkey" required="true"/> 
+		<field name="partnerid" required="true"/> 
+	</element> 
+</schema>

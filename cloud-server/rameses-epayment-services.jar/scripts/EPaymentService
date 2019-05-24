@@ -1,0 +1,183 @@
+import com.rameses.annotations.*;
+import com.rameses.webapi.common.APIException;
+
+class EPaymentService {
+	
+	@Service 
+	def self;
+
+	@Service( dynamic=true ) 
+	def dynaSvc; 
+
+	@Service('DateService') 
+	def dateSvc; 
+
+	@DataContext('paymentorder')
+	def po_db;
+
+	@DataContext('payment')
+	def pay_db;
+
+	@DataContext('gdx_partner') 
+	def partner_db;	
+
+	private void require( param, name ) {
+		if ( !param?.get(name) ) {
+			throw new APIException.RequiredParam( name ); 
+		}
+	}
+
+	@ProxyMethod 
+	public def createPaymentOrder( param ) { 
+		require( param, 'orgcode' ); 
+
+		def rundate = dateSvc.getServerDate();
+		def poid = 'PO'+ new java.rmi.server.UID(); 
+
+		def svc = dynaSvc.lookup( param.orgcode +':PartnerPaymentService', 'gdx-script-service'); 
+		def data = svc.createPaymentOrder( param );
+		if ( !data ) throw new Exception('cannot create payment order');
+
+		def m = [:]; 
+		m.putAll( data ); 
+		m.objid = poid; 
+		m.txndate = rundate; 
+		m.txntype = param.txntype; 
+		m.orgcode = param.orgcode; 
+		m.refno = param.refno; 
+		m.origin = param.origin; 
+		m.webfee = (param.webfee ? param.webfee : 0.00); 
+		m.cachekey = param.cachekey;
+		po_db.create( m ); 
+		return data; 
+	} 
+
+	@ProxyMethod 
+	public def verifyPaymentOrder( param ) {  
+		def findby = param.findBy; 
+		if ( findby == null ) {
+			require( param, 'paymentrefid' ); 
+			findby = [ paymentrefid: param.paymentrefid ];
+		}
+		
+		def data = po_db.find( findby ).first(); 
+		if ( data ) {
+			data.remove('objid'); 
+			data.remove('txndate'); 
+		}
+		
+		if ( param.silent.toString() == 'true' ) return data; 
+		if ( data ) return data; 
+
+		throw new APIException.RecordNotFound('payment order not found'); 
+	} 
+
+
+	@ProxyMethod 
+	public def postPayment( param ) { 
+		require( param, 'paymentrefid' ); 
+
+		def poinfo = po_db.find([ paymentrefid: param.paymentrefid ]).first(); 
+		if ( !poinfo ) throw new APIException.RecordNotFound('paymentrefid not found'); 
+
+		def partnerinfo = partner_db.find([ id: poinfo.orgcode ]).first(); 
+		if ( partnerinfo == null ) partnerinfo = [:]; 
+
+		def key = com.rameses.util.Encoder.MD5.encode( new java.rmi.server.UID().toString()); 
+		def m = [ objid: 'PAY-'+ key ];  
+		if ( param.debug.toString() == 'true' ) m.debug = true;   
+		m.txndate = dateSvc.getServerDate(); 
+		m.txntype = poinfo.txntype; 
+		m.orgcode = poinfo.orgcode; 
+		m.partnerid = param.partnerid; 
+		m.partnercode = param.partnercode; 
+		m.paymentrefid = param.paymentrefid; 
+		m.amount = param.amount; 
+		m.traceid = param.traceid; 
+		m.tracedate = param.tracedate; 
+		m.action = (param.action ? param.action : 'payment'); 
+		m.info = poinfo; 
+		pay_db.create( m ); 
+
+		def resp = [trackingid: m.objid]; 
+		if ( param.showdetails.toString() == 'true' ) { 
+			resp = pay_db.find([ objid: m.objid ]).first(0); 
+			resp.trackingid = m.objid;
+		} 
+		resp.partnerinfo = partnerinfo; 
+		self.publishMQAsync( m ); 
+		return resp; 
+	} 	
+
+	@ProxyMethod 
+	public void publishPayment( param ) {
+		require( param, 'paymentrefid' ); 
+
+		def info = pay_db.find([ paymentrefid: param.paymentrefid ]).first(); 
+		if ( !info ) throw new APIException.RecordNotFound('Payment not found'); 
+
+		self.publishMQAsync( info ); 
+	}
+
+	@ProxyMethod 
+	public void publishMQ( param ) { 
+	} 
+
+	@Async
+	@ProxyMethod(local=true)
+	public void publishMQAsync( param ) { 
+		self.publishMQ( param ); 
+	} 
+
+	@ProxyMethod 
+	public def verifyPayment( param ) { 
+		require( param, 'paymentrefid' ); 
+
+		def findby = [ paymentrefid: param.paymentrefid ]; 
+		if ( param.orgcode ) findby.orgcode = param.orgcode; 
+		
+		def info = pay_db.find( findby ).first(); 
+		if ( info ) {
+			if ( !param.showdetails.toString() == 'true' ) { 
+				info.remove('info'); 
+				info.remove('partner'); 
+				info.remove('partnercode'); 
+			} 
+		}
+
+		if ( param.silent.toString() == 'true' ) return info; 
+		if ( info ) return info;  
+
+		throw new APIException.RecordNotFound('Payment not found'); 
+	} 
+
+	@ProxyMethod 
+	public def getReceipt( param ) { 
+		require( param, 'receiptno' ); 
+
+		def payinfo = pay_db.find([ receiptno: param.receiptno ]).first(0); 
+		if ( !payinfo ) throw new APIException.RecordNotFound('receipt not found')
+
+		param.txntype = payinfo.txntype; 
+		param.orgcode = payinfo.orgcode; 
+
+		def svc = dynaSvc.lookup( param.orgcode +':PartnerPaymentService', 'gdx-script-service'); 
+		def data = svc.getReceipt( param ); 
+		if ( !data ) throw new APIException.RecordNotFound('receipt is not yet available') 
+		
+		def result = [:]; 
+		result.info = data; 
+		result.txntype = payinfo.txntype; 
+		result.orgcode = payinfo.orgcode; 
+		result.partner = payinfo.partner; 
+		result.amount = payinfo.amount; 
+		result.traceid = payinfo.traceid; 
+		result.paymentrefid = payinfo.paymentrefid; 
+		if ( payinfo.info instanceof Map ) {
+			result.particulars = payinfo.info.particulars; 
+			result.controlno = payinfo.info.controlno; 
+			result.paidby = payinfo.info.paidby; 
+		} 
+		return result; 
+	}
+}

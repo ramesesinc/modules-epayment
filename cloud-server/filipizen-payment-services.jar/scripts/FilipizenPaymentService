@@ -1,0 +1,152 @@
+import com.rameses.annotations.*;
+import com.rameses.webapi.common.APIException;
+
+class FilipizenPaymentService {
+
+	@DataContext('paymentorder')
+	def po_db;
+
+	@DataContext('payment_partnerinfo')
+	def partnerinfo_db;
+
+
+	@Service('EPaymentService') 
+	def epaySvc; 
+
+	@Service('EPaymentMethodService') 
+	def payMethodSvc;
+
+	@Service('FilipizenPaymentUtil') 
+	def payUtil;
+
+	@Service 
+	def self;	
+
+	@ProxyMethod 
+	public def getPaymentMethods( params ) { 
+		return payMethodSvc.getPaymentMethods( params ); 
+	}
+
+	@ProxyMethod 
+	public def createPaymentOrder( params ) { 
+		params.origin = 'filipizen'; 
+
+		def res = epaySvc.createPaymentOrder( params ); 
+		if ( res ) return res; 
+
+		throw new APIException.RecordNotFound('refno not found'); 
+	} 
+
+	@ProxyMethod 
+	public def verifyPaymentOrder( params ) { 
+		params.origin = 'filipizen'; 
+
+		def res = epaySvc.verifyPaymentOrder( params ); 
+		if ( res ) return res; 
+
+		if ( params.silent.toString() == 'true' ) return res; 
+
+		throw new APIException.RecordNotFound('payment order not found'); 
+	}
+
+
+	@ProxyMethod 
+	public void updatePaymentOrder( findBy, params ) { 
+		po_db.find( findBy ).update( params ); 
+	} 
+
+
+	@ProxyMethod 
+	public def findPartnerInfo( params ) {
+		return partnerinfo_db.find([ partnerid: params.partnerid ]).first(); 
+	}
+
+	@ProxyMethod 
+	public def postPayment( params ) { 
+		params.origin = 'filipizen'; 
+
+		def res = epaySvc.postPayment( params ); 
+		if ( res ) return res; 
+
+		throw new APIException.RecordNotFound('payment order not found'); 
+	} 	
+
+	@ProxyMethod 
+	public def verifyPayment( params ) { 
+		params.origin = 'filipizen'; 
+
+		def res = epaySvc.verifyPayment( params ); 
+		if ( res ) return res; 
+
+		if ( params.silent.toString() == 'true' ) return res; 
+		
+		throw new APIException.RecordNotFound('payment not found'); 
+	}
+
+	@ProxyMethod 
+	public def getReceipt( params ) { 
+		params.origin = 'filipizen'; 
+	
+		def res = epaySvc.getReceipt( params ); 
+		if ( res ) return res; 
+
+		throw new APIException.RecordNotFound('receipt not found'); 
+	}
+
+	@ProxyMethod(local=true)  
+	public def postReceipt( params ) { 
+		def m = [:]; 
+		try { 
+			require( params, 'paymentrefid' );
+			require( params, 'partnercode' );
+		
+			params.partnerid = params.partnercode; 
+
+			self.buildReceiptParams( params ); 
+
+			def poinfo = po_db.find([ paymentrefid: params.paymentrefid ]).first(); 
+			params.paidby = poinfo?.paidby;
+			params.txntype = poinfo?.txntype;
+			params.txntypename = poinfo?.txntypename;
+			if ( !params.particulars ) {
+				params.particulars = params.txntypename + ' payment for Order No. ' + params.paymentrefid; 
+			}
+
+			params.origin = 'filipizen'; 
+			
+			m = epaySvc.postPayment( params ); 
+			m.status = 0; 
+			m.message = 'OK';
+
+		} catch(APIException ae) { 
+			m.status = ae.code; 
+			m.message = ae.message; 
+		} catch(Throwable t) {
+			m.status = 100; 
+			m.message = t.message; 
+		}
+
+		return m; 
+	}
+
+	@ProxyMethod 
+	public void buildReceiptParams( params ) {
+		// implemented by interceptors 
+	} 
+
+	@ProxyMethod 
+	public void cancelPayment( params ) {
+		def po = po_db.find([ paymentrefid: params.paymentrefid ]).first(); 
+		po_db.find([ paymentrefid: params.paymentrefid ]).delete(); 
+		
+		if ( po?.cachekey ) { 
+			payUtil.clearCache([ key: po.cachekey.toString() ]); 
+		} 
+	} 
+
+	private void require( param, name ) {
+		if ( !param?.get(name) ) {
+			throw new APIException.RequiredParam( name ); 
+		}
+	}	
+}

@@ -1,0 +1,25 @@
+import com.rameses.annotations.*;
+
+public class PartnerPaymentServiceInterceptor {
+
+	@Service(value="OnlinePaymentService", connection="local-etracs")
+	def svc;
+
+	@Service(value="EPaymentNotificationService", connection="gdx-service")
+    def notifier;
+
+	@After( pattern="RemoteMessagingService.onMessage", eval="#{ args[0].action == 'payment' }" )
+	public void receivePayment1( def evt ) {
+		processPayment( evt.args[0] );
+	}
+
+	@After( pattern="PartnerPaymentService.resolvePayment" )
+	public void receivePayment2( def evt ) {
+		processPayment( evt.args[0] );
+	}
+
+	private void processPayment( o ) {
+		def p = svc.postPayment( o ); 
+		notifier.ackReceipt( p );
+	}
+}

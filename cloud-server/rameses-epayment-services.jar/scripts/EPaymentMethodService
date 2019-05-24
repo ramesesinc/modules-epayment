@@ -1,0 +1,39 @@
+import com.rameses.annotations.*;
+
+class EPaymentMethodService {
+
+	@Service 
+	def self; 
+
+	@DataContext('payment_partner_option') 
+	def em; 
+
+	@ProxyMethod 
+	public def getPaymentMethods( params ) { 
+		def result = []; 
+		
+		em.find([ partnerid: params.orgcode ]).list().each { 
+			def part = it.paypartner; 
+			def status = part?.state.toString().toUpperCase(); 
+			if ( !status.matches('ACTIVE')) return; 
+
+			if ( part.info == null ) part.info = [:]; 
+			part.info.putAll( it.info ? it.info : [:] ); 
+
+			part.txntype = params.txntype; 
+			self.loadPartner( part, params.po ); 
+
+			if ( part.info.testactionurl ) { 
+				part.actionurl = part.info.testactionurl; 
+			} 
+			result << part; 
+		} 
+		
+		return result; 
+	} 
+
+	@ProxyMethod 
+	public def loadPartner( def part, def po ) { 
+		return part; 
+	} 
+} 

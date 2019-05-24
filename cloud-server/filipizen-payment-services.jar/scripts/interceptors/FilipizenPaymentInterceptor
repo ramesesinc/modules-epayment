@@ -1,0 +1,17 @@
+import com.rameses.annotations.*; 
+
+class FilipizenPaymentInterceptor {
+	
+	@Service('CacheService')
+	def cacheSvc; 
+
+	@After( pattern="FilipizenPaymentService.postPayment", index=1000 )
+	public void afterPostPayment( evt ) { 
+		try { 
+			def res = evt.result;
+			if ( res?.info?.cachekey ) { 
+				cacheSvc.removeCache([ key: res.info.cachekey ]); 
+			}
+		} catch(Throwable t) {;}	
+	}
+}

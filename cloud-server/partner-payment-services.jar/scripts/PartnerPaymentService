@@ -1,0 +1,286 @@
+import com.rameses.annotations.*;
+import com.rameses.webapi.common.APIException;
+
+class PartnerPaymentService {
+	
+	@Service('EPaymentService') 
+	def epaySvc; 
+
+	@DataContext('api_account') 
+	def acct_db; 
+
+	@DataContext('payment_partner') 
+	def paypartner_db; 
+
+
+	private void require( params, name ) {
+		if ( !params?.get(name) ) {
+			throw new APIException.RequiredParam( name ); 
+		}
+	}
+	private def verifyAPIAccount( apiacctid ) { 
+		def o = acct_db.find([ objid: apiacctid ]).first(); 
+		if ( !o?.objid ) throw new APIException.InvalidAccount(); 
+
+		if ( o.state.toString().toUpperCase() == 'ACTIVE' ) return o; 
+
+		throw new APIException.InvalidAccount('api account is no longer active'); 
+	}
+	private def verifyPaymentPartner( apiacctid ) {
+		def o = verifyAPIAccount( apiacctid ); 
+		if ( !o.partnerid ) APIException.Require('payment partnerid must be set to your api account'); 
+
+		def p = paypartner_db.find([ objid: o.partnerid ]).first(); 
+		if ( !p?.objid ) throw new APIException.InvalidAccount('invalid payment partnerid'); 
+
+		if ( p.state.toString().toUpperCase() == 'ACTIVE' ) {
+			o.partner = p;
+			return o;  
+		} 
+		throw new APIException.InvalidAccount('payment partnerid is no longer active'); 
+	}
+
+	@ProxyMethod(local=true) 
+	public def getBilling( params ) { 
+		def m = [ status:0, message:'OK' ]; 
+		try { 
+			require( params, 'txntype' ); 
+			require( params, 'orgcode' ); 
+			require( params, 'refno' ); 
+			require( params, 'apiacctid' ); 
+			require( params, 'hashkey' ); 
+
+			def acctinfo = verifyAPIAccount( params.apiacctid );  
+
+			def buff = new StringBuilder(); 
+			buff.append( params.refno.toString() );
+			buff.append( params.apiacctid.toString() ); 
+			buff.append( acctinfo.secretkey.toString() ); 
+			def genkey = com.rameses.util.Encoder.MD5.encode( buff.toString() ); 
+			if ( genkey == params.hashkey ) {
+				// hash key is correct 
+			} else {
+				throw new APIException.InvalidHashKey(); 
+			} 
+
+			params.origin = 'filipizen'; 
+
+			def res = epaySvc.getBilling( params ); 
+			if ( !res ) throw new APIException.RecordNotFound('refno not found'); 
+
+			res.status = 0; 
+			res.message = 'OK'; 
+			return res; 
+
+		} catch(APIException ae) { 
+			m.status = ae.code; 
+			m.message = ae.message; 
+		} catch(Throwable t) {
+			m.status = 100; 
+			m.message = t.message; 
+		} 
+		return m; 
+	} 
+
+	@ProxyMethod(local=true) 
+	public def createPaymentOrder( params ) { 
+		def m = [ status:0, message:'OK' ]; 
+		try {
+			require( params, 'txntype' );
+			require( params, 'orgcode' );
+			require( params, 'refno' ); 
+			require( params, 'apiacctid' ); 
+			require( params, 'hashkey' ); 
+
+			def acctinfo = verifyPaymentPartner( params.apiacctid );  
+
+			def buff = new StringBuilder(); 
+			buff.append( params.refno.toString() );
+			buff.append( params.apiacctid.toString() ); 
+			buff.append( acctinfo.secretkey.toString() ); 
+			def genkey = com.rameses.util.Encoder.MD5.encode( buff.toString() ); 
+			if ( genkey == params.hashkey ) {
+				// hash key is correct 
+			} else {
+				throw new APIException.InvalidHashKey(); 
+			} 
+
+			params.origin = 'filipizen'; 
+
+			def res = epaySvc.createPaymentOrder( params ); 
+			if ( !res ) throw new APIException.RecordNotFound('refno not found'); 
+
+			res.status = 0; 
+			res.message = 'OK'; 
+			return res; 
+
+		} catch(APIException ae) { 
+			m.status = ae.code; 
+			m.message = ae.message; 
+		} catch(Throwable t) { 
+			m.status = 100; 
+			m.message = t.message; 
+		} 
+		return m; 
+	} 
+
+	@ProxyMethod(local=true) 
+	public def verifyPaymentOrder( params ) { 
+		def m = [ status:0, message:'OK' ]; 
+		try {
+			require( params, 'paymentrefid' );
+			require( params, 'apiacctid' ); 
+			require( params, 'hashkey' ); 
+
+			def acctinfo = verifyPaymentPartner( params.apiacctid );  
+
+			def buff = new StringBuilder(); 
+			buff.append( params.paymentrefid.toString() );
+			buff.append( params.apiacctid.toString() ); 
+			buff.append( acctinfo.secretkey.toString() ); 
+			def genkey = com.rameses.util.Encoder.MD5.encode( buff.toString() ); 
+			if ( genkey == params.hashkey ) {
+				// hash key is correct 
+			} else {
+				throw new APIException.InvalidHashKey(); 
+			} 
+
+			params.origin = 'filipizen'; 
+
+			def res = epaySvc.verifyPaymentOrder( params ); 
+			if ( !res ) throw new APIException.RecordNotFound('payment order not found'); 
+
+			res.status = 0; 
+			res.message = 'OK'; 
+			return res; 
+
+		} catch(APIException ae) { 
+			m.status = ae.code; 
+			m.message = ae.message; 
+		} catch(Throwable t) {
+			m.status = 100; 
+			m.message = t.message; 
+		}
+		return m; 
+	}
+
+
+	@ProxyMethod(local=true) 
+	public def postPayment( params ) { 
+		def m = [ status:0, message:'OK' ]; 
+		try { 
+			require( params, 'paymentrefid' );
+			require( params, 'amount' );
+			require( params, 'traceid' );
+			require( params, 'tracedate' );
+			require( params, 'apiacctid' ); 
+			require( params, 'hashkey' ); 
+			
+			if ( !params.amount.toString().matches("[0-9]{1,}[.][0-9]{2,2}")) 
+				throw new APIException.InvalidFormat('Invalid amount format'); 
+
+			def acctinfo = verifyPaymentPartner( params.apiacctid );  
+
+			def buff = new StringBuilder(); 
+			buff.append( params.paymentrefid.toString() );
+			buff.append( params.amount.toString() );
+			buff.append( params.traceid.toString() );
+			buff.append( params.apiacctid.toString() ); 
+			buff.append( acctinfo.secretkey.toString() ); 
+			def genkey = com.rameses.util.Encoder.MD5.encode( buff.toString() ); 
+			if ( genkey == params.hashkey ) {
+				// hash key is correct 
+			} else { 
+				throw new APIException.InvalidHashKey(); 
+			} 
+
+			def partner = acctinfo.partner; 
+			params.partnerid = partner.objid; 
+			params.partnercode = partner.code; 
+			params.origin = 'filipizen'; 
+			params.action = 'payment'; 
+
+			def res = epaySvc.postPayment( params ); 
+			if ( !res ) throw new APIException.RecordNotFound('payment order not found'); 
+
+			res.status = 0; 
+			res.message = 'OK'; 
+			return res; 
+
+
+		} catch(APIException ae) { 
+			m.status = ae.code; 
+			m.message = ae.message; 
+		} catch(Throwable t) {
+			m.status = 100; 
+			m.message = t.message; 
+		} 
+		return m; 
+	} 	
+
+	@ProxyMethod(local=true) 
+	public def verifyPayment( params ) { 
+		def m = [ status:0, message:'OK' ]; 
+		try {
+			require( params, 'paymentrefid' );
+			require( params, 'orgcode' );
+			require( params, 'apiacctid' ); 
+			require( params, 'hashkey' ); 
+
+			def acctinfo = verifyPaymentPartner( params.apiacctid );  
+
+			def buff = new StringBuilder(); 
+			buff.append( params.paymentrefid.toString() );
+			buff.append( params.apiacctid.toString() ); 
+			buff.append( acctinfo.secretkey.toString() ); 
+			def genkey = com.rameses.util.Encoder.MD5.encode( buff.toString() ); 
+			if ( genkey == params.hashkey ) {
+				// hash key is correct 
+			} else { 
+				throw new APIException.InvalidHashKey(); 
+			} 
+
+			params.origin = 'filipizen';
+
+			def res = epaySvc.verifyPayment( params ); 
+			if ( !res ) throw new APIException.RecordNotFound('payment not found'); 
+
+			res.status = 0; 
+			res.message = 'OK'; 
+			return res; 
+
+		} catch(APIException ae) { 
+			m.status = ae.code; 
+			m.message = ae.message; 
+		} catch(Throwable t) {
+			m.status = 100; 
+			m.message = t.message; 
+		}
+		return m; 
+	}
+
+	@ProxyMethod(local=true) 
+	public def getReceipt( params ) { 
+		def m = [ status:0, message:'OK' ]; 
+		try { 
+			require( params, 'receiptno' ); 
+
+			params.origin = 'filipizen';
+
+			def res = epaySvc.getReceipt( params ); 
+			if ( !res ) throw new APIException.RecordNotFound('receipt not found'); 
+
+			res.status = 0; 
+			res.message = 'OK'; 
+			return res; 
+
+		} catch(APIException ae) { 
+			m.status = ae.code; 
+			m.message = ae.message; 
+		} catch(Throwable t) { 
+			m.status = 100; 
+			m.message = t.message; 
+		} 
+		return m; 
+	}
+}

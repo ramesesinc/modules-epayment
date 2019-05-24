@@ -1,0 +1,115 @@
+import com.rameses.annotations.*;
+import com.rameses.http.*;
+import com.rameses.util.*;
+
+class EPaymentNotificationService {
+	
+	@Service( dynamic=true )
+	def dynaSvc; 
+
+	@DataContext('payment')
+	def pay_db;
+
+	@DataContext('paymentorder')
+	def po_db;
+
+	@Service 
+	def self;
+
+	@Context 
+	def ctx; 
+
+	@ProxyMethod 
+	public def ackReceipt( params ) { 
+		if ( !params.paymentrefid ) throw new Exception('paymentrefid is required'); 
+		if ( !params.receiptid ) throw new Exception('receiptid is required'); 
+		if ( !params.receiptno ) throw new Exception('receiptno is required'); 
+		if ( !params.receiptdate ) throw new Exception('receiptdate is required'); 
+
+		def payinfo = pay_db.find([ paymentrefid: params.paymentrefid ]).first(); 
+		if ( !payinfo ) throw new Exception('paymentrefid not found'); 
+		if ( payinfo.receiptid ) throw new Exception('payment already acknowledged with receiptid '+ payinfo.receiptid ); 
+
+		def poinfo = po_db.find([ paymentrefid: params.paymentrefid ]).first(); 
+		if ( !poinfo ) throw new Exception('paymentrefid not found'); 
+
+		payinfo.receiptid = params.receiptid; 
+		payinfo.receiptno = params.receiptno;
+		payinfo.receiptdate = params.receiptdate; 
+		pay_db.find([ objid: payinfo.objid ]).update([ receiptid: payinfo.receiptid, receiptno: payinfo.receiptno, receiptdate: payinfo.receiptdate, info: poinfo ]); 
+		po_db.find([ objid: poinfo.objid ]).delete(); 
+
+		params.po = poinfo; 
+		params.payment = payinfo;
+		self.notify( params ); 
+		return payinfo; 
+	} 
+
+	@ProxyMethod
+	public def sendSMS( params ) {
+		if ( !params.mobileno ) throw new Exception('mobileno parameter is required'); 
+		if ( !params.message ) throw new Exception('message parameter is required'); 
+		if ( !params.txntype ) throw new Exception('txntype parameter is required'); 
+		if ( !params.orgcode ) throw new Exception('orgcode parameter is required'); 
+		if ( !params.action ) throw new Exception('action parameter is required'); 
+
+		println 'sendSMS-> '+ params; 
+		params.phoneno = params.mobileno; 
+		return sendSMSImpl( params ); 
+	} 
+
+
+	@Async 
+	@ProxyMethod(local=true) 
+	public void notify( params ) { 
+		def mobileno = params?.po?.mobileno;
+		if ( mobileno ) { 
+			notifySMS( mobileno, params ); 
+		}
+	}
+
+	private void notifySMS( mobileno, params ) { 
+		// 09171234567, +639171234567
+		boolean validnumber = false; 
+		if ( mobileno.matches('[0-9]{11,11}')) {
+			validnumber = true; 
+		} else if ( mobileno.matches('\\+[0-9]{2,2}[0-9]{10,10}')) { 
+			validnumber = true; 
+		} 
+
+		if ( !validnumber ) return; 
+
+		def eorno = params.receiptno; 
+
+		def svrhost = ctx.conf.get('server.host'); 
+		if ( !svrhost ) svrhost = 'www.filipizen.com'; 
+
+		def m = [:];
+		m.phoneno = mobileno; 
+		m.message = 'Your payment has been accepted with EOR# '+ eorno +'. To view receipt go to http://'+ svrhost +'/receipt?'+ eorno; 
+		sendSMSImpl( m ); 
+	}
+
+	private def sendSMSImpl( m ) {
+		def result = [:];
+		try {
+			def svc = dynaSvc.lookup('SMSAPI', 'sms-service'); 
+			result = svc.send( m );
+			if (!"SUCCESS".equals(result.status)) throw new Exception(result.message);  
+
+			result.tracetime = result.timestamp; 
+			result.remarks = 'Message successfully sent'; 
+		} catch(Throwable e) { 
+			e.printStackTrace(); 
+			def cause = ExceptionManager.getOriginal(e); 
+			println "Failed to send sms to ${m.phoneno} caused by ${cause.message}"; 
+			result = [status:'FAILED', remarks:cause.message]; 
+		} 
+
+		m.state = result.status;
+		m.remarks = result.remarks;
+		m.traceid = result.traceid;
+		m.tracetime = result.tracetime;
+		return m;
+	}
+}

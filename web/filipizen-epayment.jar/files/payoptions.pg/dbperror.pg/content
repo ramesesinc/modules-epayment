@@ -1,0 +1,13 @@
+<form id="form1" method="POST" action="/payoptions/errorinit">
+<%
+PARAMS.partnercode = 'DBP'; 
+PARAMS.status = PARAMS.responseCode; 
+PARAMS.paymentrefid = PARAMS.referenceCode; 
+PARAMS.each{ k,v-> 
+  println '<input type="hidden" name="'+ k +'" value="'+ (v ? v : '') +'"/>' 
+} 
+%>
+</form>
+<script> 
+\$('#form1').submit(); 
+</script>

@@ -1,0 +1,5 @@
+<%
+if ( PARAMS.status == null ) PARAMS.status = '';
+
+println '<pre>Error ('+ PARAMS.status+')  '+ (PARAMS.message ? PARAMS.message : '') +'</pre>'; 
+%>

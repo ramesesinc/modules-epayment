@@ -1,0 +1,39 @@
+<% 
+def m = [ ctxname: "" ]; 
+try { 
+	def paySvc = SERVICE.lookup('FilipizenPaymentService'); 
+	def mparam = [ silent: true, findBy: [paymentrefid: PARAMS.paymentrefid]]; 
+	def po = paySvc.verifyPaymentOrder( mparam ); 
+	if ( !po?.paymentrefid ) { 
+		mparam.findBy = [controlno: PARAMS.paymentrefid]; 
+		po = paySvc.verifyPaymentOrder( mparam ); 
+	} 
+
+	def paymentrefid = ( po?.paymentrefid ? po.paymentrefid : PARAMS.paymentrefid ); 
+
+	def cacheSvc = SERVICE.lookup( "CacheService" ); 
+	def cacheVal = cacheSvc.get([ key: paymentrefid.toString()+'-context' ]); 
+	def ctxname = cacheVal?.name; 
+	m.ctxname = (ctxname ? ("/"+ctxname) : "/partners"); 
+	m.paymentrefid = paymentrefid; 
+	m.orgcode = po?.orgcode; 
+
+	def partnerSvc = SERVICE.lookup( "GdxPartnerService" ); 
+	def partnerInfo = partnerSvc.find([ id: po?.orgcode.toString() ]); 
+	def pgroup = partnerInfo?.clusterid.toString().toLowerCase(); 
+	def pname = partnerInfo?.name.toString().toLowerCase();
+	m.orgname = pgroup +'_'+ pname; 
+
+} catch(Throwable t) {
+	//do nothing 
+}
+
+println '<form id="form1" method="POST" action="'+ m.ctxname +'/'+ m.orgname +'/payoptions/error">';
+PARAMS.each{ k,v-> 
+	println '<input type="hidden" name="'+ k +'" value="'+ v +'"/>'; 
+}
+println '</form>';
+println ''' <script> \$('#form1').submit(); </script> '''; 
+
+%> 
+

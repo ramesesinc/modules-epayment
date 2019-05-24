@@ -1,0 +1,20 @@
+<% 
+def m = [ ctxname: "" ]; 
+try { 
+  def svc = SERVICE.lookup( "CacheService" ); 
+  def cacheVal = svc.get([ key: PARAMS.paymentrefid.toString()+'-context' ]); 
+  def ctxname = cacheVal?.name; 
+  m.ctxname = (ctxname ? ("/"+ctxname) : "/partners"); 
+
+} catch(Throwable t) {
+  //do nothing 
+}
+%> 
+
+<form id="form1" method="POST" action="${m.ctxname}/${PARAMS.name}/payoptions/success">
+  <input type="hidden" name="paymentrefid" value="${PARAMS.paymentrefid}"/> 
+  <input type="hidden" name="orgcode" value="${PARAMS.orgcode}"/> 
+</form> 
+<script> 
+\$('#form1').submit(); 
+</script>

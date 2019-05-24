@@ -1,0 +1,154 @@
+<% 
+def m = [data: [:]]; 
+boolean pass = false; 
+try { 
+  def svc = SERVICE.lookup("FilipizenPaymentService"); 
+  def data = svc.verifyPayment([ paymentrefid: PARAMS.paymentrefid, orgcode: PARAMS.orgcode, showdetails: true ]); 
+  if ( !data ) throw new Exception('Payment reference id not found'); 
+  if ( data.info == null ) data.info = [:]; 
+
+  if ( data.amount instanceof Number ) {
+    def formatter = new java.text.DecimalFormat('#,##0.00'); 
+    data.amountstr = formatter.format( data.amount );  
+  } else {
+    data.amountstr = data.amount.toString(); 
+  }
+
+  data.txndatestr = data.txndate.toString(); 
+  if ( data.txndate instanceof java.util.Date ) {
+    data.txndatestr = new java.text.SimpleDateFormat('MMM dd, yyyy HH:mm:ss').format( data.txndate );  
+  } 
+
+  m.paidto = PARAMS.info?.title; 
+  m.paypartner = data.partner?.name; 
+
+  def serverhost = PROJECT.get('server.host'); 
+  if ( !serverhost ) serverhost = 'www.filipizen.com';
+  m.link = 'http://'+ serverhost +'/geteor?'+ data.paymentrefid; 
+  m.linkname = 'http://www.filipizen.com/geteor?'+ data.paymentrefid;
+  m.data = data; 
+  pass = true; 
+
+} catch(Throwable t) {
+  def errmsg = t.message; 
+  if ( !errmsg ) {
+    def cause = t.cause; 
+    while ( cause != null ) {
+      errmsg = cause.message; 
+      if ( errmsg ) break; 
+    }
+  } 
+
+  m.errmsg = errmsg.toString(); 
+  t.printStackTrace(); 
+}
+
+def escapeHtml = { o-> 
+  if ( o ) {
+    return org.apache.commons.lang.StringEscapeUtils.escapeHtml( o.toString() ); 
+  } else {
+    return o;
+  }
+}
+%> 
+
+<% if (!pass) {%>
+  <pre style="margin:10px;">${m.errmsg.toString()}</pre>
+
+<% } else { %> 
+
+<style>
+.header-title {
+  font-size:1.3em;
+  padding:20px 0px 5px 0px;
+}
+.label-address { 
+  padding:0px;
+  padding-bottom:10px;
+}
+.label-top {
+  font-size: 1.09em;
+  padding-bottom: 3px;
+}
+.label-name { 
+  min-width:100px; 
+  display:inline-block;
+} 
+a.eorlink {
+  color: #1a73e8;
+  font-weight: bold;
+}
+a.eorlink:hover {
+  color: #1db954;
+}
+</style>
+
+<br/>
+<div id="wrapper" > 
+	<div id="content">
+        <div class="container">
+          <div class="bg-white">
+            <div class="bill-main-panel">
+              <div class="row">
+                <div class="col-md-12"> 
+                  <div class="l-name">
+                    <p><h2 class="header-title">Payment Successful</h2></p>
+                    <p class="label-address">Your payment has been sucessfully processed. Here are the details of this transaction for your reference.</p>
+                  </div>    
+                </div>
+
+                <br/>
+                <div class="bill-second-panel">
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="label-top">
+                        <p class="label-title">
+                          <p class="label-name">Paid To</p> : &nbsp; ${escapeHtml(m.paidto)} 
+                        </p>
+                      </div>
+                      <div class="label-top">
+                        <p class="label-title">
+                          <p class="label-name">Pay Partner</p> : &nbsp; ${m.paypartner} 
+                        </p>
+                      </div>
+                      <div class="label-top">
+                        <p class="label-title">
+                          <p class="label-name">Txn No.</p> : &nbsp; ${m.data.paymentrefid}
+                        </p>
+                      </div>
+                      <div class="label-top">
+                        <p class="label-title">
+                          <p class="label-name">Txn Date</p> : &nbsp; ${m.data.txndatestr}
+                        </p>
+                      </div> 
+                      <div class="label-top">
+                        <p class="label-title">
+                          <p class="label-name">Paid By</p> : &nbsp; ${escapeHtml(m.data.info?.paidby)} 
+                        </p>
+                      </div> 
+                      <div class="label-top">
+                        <p class="label-title">
+                          <p class="label-name">Particulars</p> : &nbsp; ${m.data.info?.particulars}
+                        </p>
+                      </div>
+                      <div class="label-top">
+                        <p class="label-title">
+                          <p class="label-name">Amount</p> : &nbsp; ${m.data.amountstr}
+                        </p>
+                      </div>
+                    </div>  
+                  </div>
+                </div> 
+
+<br/> <br/> 
+If you cannot receive an EOR confirmation after sometime, you can followup by 
+clicking the link below <br/> <a class="eorlink" href="${m.link}">${m.linkname}</a>
+
+              </div>
+            </div>
+        </div> 
+    </div>
+  </div>   
+</div>
+
+<% } %> 

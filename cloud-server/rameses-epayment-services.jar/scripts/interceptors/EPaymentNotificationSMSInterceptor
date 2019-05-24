@@ -1,0 +1,38 @@
+import com.rameses.annotations.*;
+
+class EPaymentNotificationSMSInterceptor {
+	
+	@DataContext('gdx_partner') 
+	def partner_db;
+
+	@Before( pattern='EPaymentNotificationService.sendSMS', index=-1 ) 
+	public def verifyParams( evt ) { 
+		def param = evt.args[0]; 
+		if ( !param.message ) throw new Exception('message parameter is required'); 
+		if ( !param.mobileno ) throw new Exception('mobileno parameter is required'); 
+		if ( !param.txntype ) throw new Exception('txntype parameter is required'); 
+		if ( !param.orgcode ) throw new Exception('orgcode parameter is required'); 
+		if ( !param.action ) throw new Exception('action parameter is required'); 
+
+		return param; 
+	} 
+
+	@Before( pattern='EPaymentNotificationService.sendSMS', eval="#{args[0]?.action == 'bill'}" ) 
+	public void beforeSendSMS( evt ) { 
+		def param = verifyParams( evt ); 
+		def partner = partner_db.find([ id: param.orgcode ]).first(); 
+		if ( !partner ) throw new Exception(''+ param.orgcode +' partner not found');  
+
+		def pname = ''+ (partner.clusterid ? (partner.clusterid+'_') : '') + (partner.name ? partner.name : param.orgcode); 
+		def svcname = (param.txntype == 'bpls' ? 'business': param.txntype); 
+		def billpath = 'http://www.filipizen.com/partners/'+ pname +'/services/'+ svcname +'/bill?';
+		param.params?.each{ k,v-> 
+			billpath += (k + '='+ v +'&'); 
+		}
+
+		def buff = new StringBuilder(); 
+		buff.append( param.message.toString() ); 
+		buff.append('. To view billing go to ').append( billpath ); 
+		param.message = buff.toString(); 
+	} 
+} 

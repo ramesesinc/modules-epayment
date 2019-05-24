@@ -1,0 +1,113 @@
+<%
+def reqparam = [:]; 
+PARAMS.each{ k,v-> 
+	if ( v == null || v instanceof Map ) return; 
+	else if ( v.toString().length() == 0) return; 
+
+	reqparam.put(k, v); 
+}
+
+def errkeys = []; 
+reqparam.each{k,v-> 
+	if ( k.toString().startsWith('errparam_')) {
+		errkeys << k; 
+	}
+}
+def errparam = [:]; 
+errkeys.each{ 
+	def val = reqparam.remove(it);
+	errparam.put(it.split("_")[1], val);
+}
+
+def successurl = reqparam.remove('successurl');
+def errorurl = reqparam.remove('errorurl');
+def hashkey = reqparam.remove('hashkey');
+def formaction = errorurl;
+def formparam = [:];
+try {
+	def txntype = reqparam.txntype; 
+	def orgcode = reqparam.orgcode; 
+	def refno   = reqparam.refno; 
+	def md5 = com.rameses.util.Encoder.MD5;
+	def newhashkey = md5.encode(''+ txntype + orgcode + refno); 
+	if ( newhashkey != hashkey ) throw new Exception('Invalid Hash Key'); 
+
+    def cacheSvc = SERVICE.lookup( "CacheService" ); 
+    if ( cacheSvc == null ) throw new Exception('CacheService not found');
+
+    def svc = SERVICE.lookup( "FilipizenPaymentService" ); 
+	if ( svc == null ) throw new Exception('FilipizenPaymentService not found');
+
+	def reqkeys = []; 
+	reqparam.each{ k,v-> 
+		if ( v instanceof Map ) return; 
+		else reqkeys << k; 
+	}
+
+    def buff = new StringBuilder(); 
+    reqkeys.sort{it}.each{ k-> 
+    	def v = reqparam.get(k); 
+    	buff.append( k.toString()).append('=').append( v.toString()).append(';');
+    }
+
+    def paths = REQUEST.pathInfo.toString().split('/');
+    def ctxname = (paths.length > 1 ? paths[1] : ""); 
+    def cacheKey = md5.encode( buff.toString()); 
+    def cacheVal = cacheSvc.get([ key: cacheKey ]); 
+
+    def paymentrefid = null; 
+    if ( cacheVal instanceof String ) {
+    	paymentrefid = cacheVal; 
+    }
+    
+    if ( paymentrefid != null ) { 
+    	try { 
+			def po = svc.verifyPaymentOrder([ paymentrefid : paymentrefid ]); 
+			paymentrefid = po?.paymentrefid; 
+		} catch( Throwable t ) {
+			paymentrefid = null; 
+		}
+    }
+
+    if ( !paymentrefid ) {
+    	reqparam.cachekey = cacheKey;
+    	if ( reqparam.billno ) reqparam.refno = reqparam.billno; 
+
+	    def po = svc.createPaymentOrder( reqparam );
+	    if ( !po ) throw new Exception('failed to create payment order'); 
+
+	    paymentrefid = po.paymentrefid; 
+	    cacheSvc.put([ key: cacheKey, value: paymentrefid, timeout: 7200 ]); 
+    }
+
+    cacheSvc.put([ key: paymentrefid+'-context', value: [name: ctxname], timeout: 7200 ]); 
+
+    formparam.paymentrefid = paymentrefid;
+    formparam.cancelurl = errorurl;
+    formaction = successurl; 
+} 
+catch(Throwable t) {
+	def errmsg = t.message; 
+	if ( !errmsg ) {
+		def cause = t.cause; 
+		while ( cause != null ) {
+			errmsg = cause.message; 
+			if ( errmsg ) break; 
+		}
+	}	
+
+	formparam = errparam; 
+	formparam.errmsg = errmsg.toString(); 
+    t.printStackTrace();
+}
+%>
+
+<form id="postform" method="POST" action="${formaction}">
+<% formparam.each { k,v-> %>
+	<input type="hidden" name="${k}" value="${v}" /> 
+<% } %> 
+</form> 
+
+<script> 
+\$('#postform').submit(); 
+</script> 

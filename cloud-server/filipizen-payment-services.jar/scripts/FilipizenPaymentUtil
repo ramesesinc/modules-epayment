@@ -1,0 +1,17 @@
+import com.rameses.annotations.*;
+import com.rameses.webapi.common.APIException;
+
+class FilipizenPaymentUtil {
+
+	@Service('CacheService') 
+	def cacheSvc; 
+
+	@ProxyMethod 
+	public def clearCache( params ) { 
+		if ( params.key ) {
+			cacheSvc.removeCache([ key: params.key ]); 
+		}
+		return 'success'; 
+	}
+
+}

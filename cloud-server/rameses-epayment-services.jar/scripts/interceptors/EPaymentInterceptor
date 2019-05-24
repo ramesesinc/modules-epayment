@@ -1,0 +1,22 @@
+import com.rameses.annotations.*;
+
+class EPaymentInterceptor {
+	
+	@Service 
+	def self;
+
+	@XConnection('remote-script-mq') 
+	def mq; 
+
+	@After( pattern='EPaymentService.publishMQ' ) 
+	public void afterPublishMQ( evt ) {
+		def param = evt.args[0]; 
+		self.publishMQImpl( param ); 
+	} 
+
+	@Async 
+	@ProxyMethod 
+	public void publishMQImpl( param ) {
+		mq.send( param, param.orgcode ); 
+	} 	
+} 

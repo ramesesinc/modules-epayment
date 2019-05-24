@@ -1,0 +1,32 @@
+import com.rameses.annotations.*;
+
+class DBPPartnerInterceptor {
+	
+	def formatter = new java.text.DecimalFormat('0.00');
+
+	@After(pattern="EPaymentMethodService.loadPartner", eval="#{args[0].objid.equalsIgnoreCase('DBP')}") 
+	public void loadPartner( evt ) {
+		def partner = evt.args[0]; 
+		def po = evt.args[1];
+
+		def params = [:];
+		params.terminalID = partner.info?.terminalid;
+		params.referenceCode = po.paymentrefid; 
+		params.serviceType = po.particulars; 
+		params.amount = ( po.amount == null ? "" : formatter.format( po.amount )); 
+
+		def secval = partner.info?.terminalid + po.paymentrefid + '{' + partner.info?.transactionkey + '}'; 
+		params.securityToken = com.rameses.util.Encoder.SHA1.encode(secval);
+		partner.params = params; 
+	}	
+
+	@After( pattern="FilipizenPaymentService.buildReceiptParams", eval="#{args[0]?.partnercode.toString().toUpperCase() == 'DBP'}") 
+	public void buildReceiptParams( evt ) {
+		def params = evt.args[0]; 
+
+		params.paymentrefid = params.referenceCode; 
+		params.amount = params.amount; 
+		params.traceid = params.retrievalReferenceCode; 
+		params.tracedate = params.refdate; 
+	} 	
+} 

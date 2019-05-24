@@ -1,0 +1,32 @@
+import com.rameses.annotations.*
+
+class PartnerPaymentService {
+
+	@Service(value='EPaymentService', connection='gdx-service')
+	def paymentSvc;
+
+	@Service 
+	def self; 
+
+    @ProxyMethod
+    public void resolve( params ) {  
+    	if ( !params.paymentrefid ) throw new Exception('paymentrefid is required'); 
+    	if ( !params.orgcode ) throw new Exception('orgcode is required'); 
+
+    	def o = paymentSvc.verifyPayment( params ); 
+        if ( !o ) {
+            println 'failed to verify payment for '+ params.paymentrefid; 
+            return; 
+        }
+
+        println '[PartnerPaymentService] payment order '+ params.paymentrefid +' (resolving...)';
+		self.resolvePayment( o ); 
+        println '[PartnerPaymentService] payment order '+ params.paymentrefid +' ( resolved )'; 
+    } 
+
+    @ProxyMethod 
+    public def resolvePayment( o ) {
+    	// to be intercept... 
+    	return o; 
+    }
+}

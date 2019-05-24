@@ -1,0 +1,13 @@
+import com.rameses.annotations.*; 
+
+class PartnerNotificationService {
+	
+	@Service(value='EPaymentNotificationService', connection='gdx-service')
+	def notifySvc;
+
+	@ProxyMethod 
+	public void sendSMS( params ) {
+		//notifySvc.sendSMS( params ); 
+	}
+
+}
