@@ -54,6 +54,7 @@ class OnlinePaymentResolverService {
     		try {
     			o.paymentrefid = o.objid; 
     			o.orgcode = o.locationid; 
+                println 'before resolve -> '+ o.paymentrefid; 
     			paymentProxySvc.resolve( o ); 
    			} catch(Throwable t) { 
    				t.printStackTrace(); 

@@ -1,86 +1,118 @@
 <%
-def respcode = 0; 
-def respmsg  = 'ok'; 
-def data = null; 
-try { 
-    def svc = SERVICE.lookup('FilipizenPaymentService'); 
-    def resp = svc.verifyPaymentOrder( PARAMS ); 
-    if ( !resp ) throw new Exception('paymentrefid not found'); 
+	def svc = SERVICE.lookup("CloudPaymentService", "epayment");
+	def po = svc.getPaymentOrder( [refno: PARAMS.refno ] );
+	def payOptions = svc.getPaymentPartnerOptions( [partnerid: po.orgcode ] );
+  def escapeHtml = { o-> return org.apache.commons.lang.StringEscapeUtils.escapeHtml(o) };
 
-    data = [
-        paymentrefid: resp.paymentrefid, orgcode: resp.orgcode, 
-        txntype: resp.txntype, txntypename: resp.txntypename, 
-        amount: resp.amount 
-    ]; 
-
-    respcode = 0; 
-    respmsg = ''; 
-} catch(Throwable t) { 
-    respcode = 1; 
-    respmsg = t.message; 
-    t.printStackTrace(); 
-} 
-
-def bcdata = null; 
-def qrdata = null; 
-if ( respcode == 0 ) {
-    def list = []; 
-    def YMD = new java.text.SimpleDateFormat('yyyy-MM-dd'); 
-    def YMDHMS = new java.text.SimpleDateFormat('yyyy-MM-dd HH:mm:ss'); 
-    data.each{ k,v-> 
-        if ( v instanceof String ) { 
-            list << ('"'+ k +'":"'+ v +'"'); 
-        } else if ( v instanceof Number ) { 
-            list << ('"'+ k +'": '+ v ); 
-        } else if ( v instanceof Boolean ) { 
-            list << ('"'+ k +'": '+ v ); 
-        } else if ( v instanceof java.sql.Timestamp ) { 
-            list << ('"'+ k +'": "'+ YMDHMS.format(v) +'"'); 
-        } else if ( v instanceof java.util.Date ) { 
-            list << ('"'+ k +'": "'+ YMD.format(v) +'"'); 
-        } 
-    }
-
-    bcdata = data.paymentrefid.toString(); 
-    qrdata = "{}";
-    if ( list ) { 
-        qrdata = '{'+ list.join(', ') +'}'; 
-    } 
-
-    qrdata = new com.rameses.util.Base64Cipher().encode( qrdata.toString() ); 
-}
+  def formatDecimal = new java.text.DecimalFormat( "##,###.##");
 %>
 
-<br/> 
-<div class="container">
-    <div class="row code-container">
-        <div class="col-md-12">
-            <% if ( !(respcode == 0)) { %> 
-                <h2> Payment Order transaction not found. Please check </h2> 
-            <% } %> 
+<script>
+  \$put( "paymodel", new function() {
+      this.agree = false;
+  })
 
-            <% if ( respcode == 0 ) { %>  
+  function validateSubmit() {
+    var f = \$get("paymodel").code.agree; 
+    if(!f) {
+      alert("Please read and agree first")
+      return false;
+    }
+    else {
+      return true;
+    }
+  }
+</script>
 
-            <div id="outPopUp">
-                <div class="cbarcode">
-                    <img id="barcode" class="img-responsive"/>
-                    <h4>${bcdata}</h4> 
+<br>
+<div style="margin:30px 0px 0px 200px">
+    <div class="row">
+      <div class="col-md-6 col-xs-9">
+            <form action="#" method="post" id="paymentOption">
+                <div class="row">
+                  <label class="col-md-3 col-xs-5 "><b>Control No</b><span class="pull-right">:</span></label>
+                  <div class="col-sm-8 nopadleft">
+                      ${po.controlno}
+                  </div>
                 </div>
-                <div class="qrcode">
-                    <img id='qrcode' src="https://api.qrserver.com/v1/create-qr-code/?data=${qrdata}&amp;size=250x250" width="250" height="250" class="img-responsive"/>
+                <div class="row">
+                  <label class="col-md-3 col-xs-5  "><b>Particulars</b> <span class="pull-right">:</span></label>
+                  <div class="col-sm-8 nopadleft">
+                     ${escapeHtml(po.particulars)}
+                  </div>
                 </div>
-            </div>  
-            <% } %> 
-        </div>
+                <div class="row">
+                  <label class="col-md-3 col-xs-5  "><b>Paidby</b> <span class="pull-right">:</span></label>
+                  <div class="col-sm-8 nopadleft">
+                    ${ escapeHtml(po.paidby) }
+                  </div>
+                </div>
+            </form>
+      </div>
+      <!-- <div class="col-md-3 col-xs-3 ">
+      	<img id='qrcode' src="https://api.qrserver.com/v1/create-qr-code/?data=${po?.paymentrefid}&amp;size=250x250" width="100" height="100" class="img-responsive"/><br>
+      </div> -->
     </div>
+    <div class="row">
+      <div class="col-md-8">
+        <div class="bankOption">
+            <div class="row">
+              <label class="col-md-3 col-xs-6 "><b>Amount </b><span class="pull-right">:</span></label>
+              <div class="col-md-3 text-right">
+                   ${formatDecimal.format(po.amount)}
+              </div>
+            </div>
+            <div class="row">
+              <label class="col-md-3 col-xs-6  "><b>Web Service Fee </b> <span class="pull-right">:</span></label>
+              <div class="col-md-3 text-right">
+                ${formatDecimal.format(po.webfee)}
+              </div>
+            </div>
+            <div class="row">
+              <label class="col-md-3 col-xs-6  "><b>Total</b><span class="pull-right">:</span></label>
+              <div class="col-md-3 text-right">
+                <b>${formatDecimal.format(po.amount)}</b> 
+              </div>
+            </div>
+            <!-- 
+            <div class="row">
+              <div class="col-sm-12">
+                <i>Pay on or before &nbsp; ${po.expirydate ? po.expirydate : ""}</i>
+              </div>
+            </div> 
+            --> 
+        </div>
+      </div>
+    </div>
+    <br>
+    <div class="row">
+      <div class="col-md-12">
+        <label>
+          <input type="checkbox" name="checkbox" r:context="paymodel" r:name="agree"/> 
+          &nbsp; I acknowledge and agree to the <a href="#" class="terms">Terms and Conditions</a> of this e-payment facility.
+        </label>
+      </div>
+    </div>
+
+	<br/> 
+
+	<div class="row">
+		<div class="col-md-12">
+			<div class="row">
+					<%payOptions.each{ o-> %>
+  					<div class="col-md-2 col-xs-6">
+            <form action="/sendtopartner" method="POST"> 
+              <input type="hidden" name="refno" value="${PARAMS.refno}" />
+              <input type="hidden" name="payoption" value="${o.objid}" />
+    					 <button type="submit" class="btn btn-bank-${o.paypartnerid.toLowerCase()}" onclick="return validateSubmit();">
+  			            <img src="/res/partners/${o.paypartnerid.toLowerCase()}/icon.png" >
+  			       </button>
+  			    </div>
+				<%}%>
+			</div>
+		</div>
+	</div>
 </div>
 
-<script type="text/javascript">
 
-<% if ( respcode == 0 ) { %>  
-    \$(document).ready(function(){
-        \$("#barcode").JsBarcode("${bcdata}",{width:3,height:165});
-    });
-<% } %> 
 
-</script>

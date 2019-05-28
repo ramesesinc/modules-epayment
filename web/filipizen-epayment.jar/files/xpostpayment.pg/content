@@ -1,0 +1,9 @@
+
+
+<%
+	def svc = SERVICE.lookup( "CloudPostPaymentService", "epayment" );
+	svc.postPayment( PARAMS );
+%>
+
+THIS IS JUST A SAMPLE IMPLEMENTATION. THE ACTUAL WILL BE CALLED IN THE <<paypartner>>success page.
+REDIRECTING PAGE HERE ------> POSTING PAYMENT HERE;

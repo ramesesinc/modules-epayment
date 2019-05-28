@@ -1,0 +1,70 @@
+import com.rameses.annotations.*
+import com.rameses.util.*
+import com.rameses.common.*
+import com.rameses.services.extended.*
+
+class EPaymentService  {
+
+    @Service(value="OnlinePaymentService", connection="local-epayment")
+    def localSvc;
+
+    @Service(value="CloudPaymentService", connection="cloud-epayment")
+    def cloudSvc;
+
+    @Service(value="DateService", connection="local-etracs")
+    def dateSvc;
+
+    @ProxyMethod
+    public def createPaymentOrder(def params) {
+        if(!params.refno) throw new Exception("Please indicate a billing refno");
+        if(!params.orgcode) throw new Exception("Please include orgcode"); 
+        if(!params.txntype) throw new Exception("Please include txntype"); 
+        try {
+            def po = localSvc.createPaymentOrder( params );
+            po.orgcode = params.orgcode;
+            po.refno = params.refno;
+            po.origin = params.origin;
+            cloudSvc.createPaymentOrder( po );
+
+            //activate the state:
+            localSvc.activatePaymentOrder( [objid:po.objid] );
+
+            return po;
+        }
+        catch(e) {
+            throw e;
+        }
+    }
+
+    @ProxyMethod
+    public def getReceipt( def o ) {
+        def rct = [
+            receiptno: o.receiptno,
+            paidby: "elmo",
+            paidbyaddress: "cebu city",
+            particulars: 'Business Payment',
+            amount: 200.00, 
+            amountinwords: 'TWO HUNDRED PESOS ONLY',
+            partner: [name: 'LANDBANK'],
+            traceid: '126788912',
+            txndatestr: '2018-01-01'               
+        ];
+        rct.items = [];
+        rct.items << [item: [title: 'Business Tax', remarks:'Sari sari store'], amount : 100];
+        rct.items << [item: [title: 'Mayors Permit', remarks:'Sari sari store'], amount : 100];
+
+        return rct;
+        /*
+        return svc.getReceipt( o );
+        */
+    }
+
+    @ProxyMethod
+    public def postPayment( def p ) {
+        println "POSTING PAYMENT ION GDX CLIENT " + p;
+        return [status:"ok"];
+    }
+
+
+}
+

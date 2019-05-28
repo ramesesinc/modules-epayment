@@ -1,44 +1,129 @@
 <%
-def m = [:]; 
-boolean pass = false;
-try {
-	def paymentrefid = REQUEST.queryString.toString().split('&')[0]; 
-	def svc = SERVICE.lookup( "FilipizenPaymentService" ); 
-	if ( svc == null ) throw new Exception('FilipizenPaymentService not found');
-
-	def data = svc.verifyPayment([ paymentrefid: paymentrefid, silent: true ]); 
-	if ( data == null ) throw new Exception('Payment transaction not found'); 
-
-	if ( data.receiptno == null ) { 
-		m.errmsg ='EOR Receipt is still pending at this time. You will be notified as soon as the receipt is posted.';
-
-	} else {
-		m.receiptno = data.receiptno; 
-		pass = true; 
-	}
-}
-catch(Throwable t) {
-	def errmsg = t.message; 
-	if ( !errmsg ) {
-		def cause = t.cause; 
-		while ( cause != null ) {
-			errmsg = cause.message; 
-			if ( errmsg ) break; 
-		}
-	}	
-
-	m.errmsg = errmsg.toString(); 
-    t.printStackTrace();
-}
+	def orgcode = "137";
+    def svc = SERVICE.lookup("CloudPartnerService", "partner");
+    def partner = svc.findById( [id: orgcode ] );
 %>
 
-<% if (!pass) {%>
-<pre style="margin:10px;">${m.errmsg.toString()}</pre>
-
-<% } else { %> 
-
 <script>
-window.location.href = "/receipt?${m.receiptno}";
+\$put("eor", new function() {
+	var self = this;
+	this.error;
+	this.receipt;
+	this.receiptno = WindowUtil.getParameter("receiptno");
+	this.orgcode = "${orgcode}";
+
+	this.onload = function() {
+		var svc = Service.lookup(this.orgcode + ":EPaymentService");
+		svc.getReceipt( {receiptno: self.receiptno}, function(o,s) {
+			if( s=="error") {
+				self.error = o.result;
+			}
+			else {
+				self.error = null;
+				self.receipt = o.result;
+			}
+			self._controller.refresh();
+		})
+	}
+
+});
 </script>
 
-<% } %> 
+<div r:context="eor" r:visibleWhen="#{error!=null}" style="display:none;">
+	<label r:context="eor">#{error}</label>
+</div>
+
+<div r:context="eor" r:visibleWhen="#{error==null}" style="display:none;">
+	<div style="margin-left:200px;margin-right:200px;margin-top:50px;border:1px solid lightgrey;padding-top:20px;">
+		<div class="col-md-12">
+		    <div class="row">
+		        <div class="receiptinfo col-md-7">
+		            EOR No.: 
+		            <h1 class="eorno"><label r:context="eor">#{receipt.receiptno}</label></h1>
+		            <strong>Paid By : </strong> <label r:context="eor">#{receipt.paidby}</label><br />
+		            <strong>Address: </strong><label r:context="eor">#{receipt.paidbyaddress}</label><br />
+		            <strong>Particulars: </strong> <label r:context="eor">#{receipt.particulars}</label><br />
+		            <strong>Agency: </strong> ${partner.title}, ${partner.group.title}</label>
+
+		        </div>
+		        <div class="qrdata col-md-5">
+		        	<img id='qrcode' src="https://api.qrserver.com/v1/create-qr-code/?data=${PARAMS.receiptno}&amp;size=250x250" width="150" height="150" class="img-responsive"/>					
+		            <div id="output"></div>
+		        </div>
+		    </div>
+		    <hr>
+		    <div class="row">
+		        <div class="col-lg-6 col-md-6 col-sm-6">
+		            <strong>PAYMENT DETAILS :</strong>
+		        </div>
+		    </div>
+		    <hr>
+		    <div class="row">
+		        <div class="col-lg-12 col-md-12 col-sm-12">
+		            <div class="table-responsive">
+		                <table class="table table-bordered" r:context="eor" r:items="receipt.items" r:varName="item">
+		                    <thead>
+			                    <tr>
+			                        <th class="text-left" style="padding-left:15px;">Account</th>
+			                        <th class="text-right" style="padding-right:15px;" maxWidth="100">Amount</th>
+			                    </tr>
+		                    </thead>
+		                    <tbody>
+			                    <tr> 
+			                        <td class="text-left" style="padding-left:15px;"> #{item.item.title} #{item.remarks}</td> 
+			                        <td class="text-right" style="padding-right:15px;"> #{ item.amount.formatDecimal() } </td> 
+			                    </tr> 
+		                    </tbody>
+		                </table>
+		            </div>
+		            
+		            <hr>
+		            <div>
+		                <h4>  TOTAL : Php  <label r:context="eor">#{ receipt.amount.formatDecimal() }</label></h4>
+		            </div>
+
+		            <hr>
+		            <div>
+		                <h4>  Amount in words : <label r:context="eor">#{receipt.amountinwords}</label> </h4>
+		            </div>
+
+		            <hr>
+		        </div>
+		    </div>
+
+		    <div class="row">
+		        <div class="col-lg-12 col-md-12 col-sm-12">
+		            <strong>Bank : </strong>  <label r:context="eor">#{receipt.partner.name}</label>
+		            <br />
+		            <strong>Txn No.: </strong> <label r:context="eor">#{receipt.traceid}</label> 
+		            <br />
+		            <strong>Txn Date: </strong> <label r:context="eor">#{receipt.txndatestr}</label>
+		        </div>
+		    </div>
+		    <hr>
+		    
+		</div>
+	</div>
+	<div style="margin:30px 0px 0px 200px">
+		<div class="row">
+	        <div class="col-lg-12 col-md-12 col-sm-12">
+	            <button onclick="location.href='javascript:window.print()';" href="" class="btn btn-primary btn-sm btn-eor" >Print EOR</button> &nbsp; &nbsp; &nbsp;
+	            <!-- <button id="export" class="btn btn-info btn-sm btn-eor">Download In Pdf</button> -->
+	        </div>
+	    </div>
+    </div>
+    <hr class="hr-bottom">
+</div>
+
+
+
+
+<style>
+	@media print {
+         .navbar-inverse{display:none}
+         .footer{display:none}
+         #Header, #Footer { display: none ! important; }
+         @page {size: auto;margin: 0mm;}
+      }
+</style>
+

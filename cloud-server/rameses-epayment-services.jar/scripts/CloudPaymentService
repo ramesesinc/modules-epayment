@@ -1,0 +1,47 @@
+import com.rameses.annotations.*;
+import com.rameses.webapi.common.APIException;
+
+class CloudPaymentService {
+	
+	@Service 
+	def self;
+
+	@DataContext('paymentorder')
+	def po_db;
+
+	@DataContext('payment_partner_option')
+	def optionEm;
+
+	@DataContext('payment')
+	def pay_db;
+
+	@ProxyMethod 
+	public def createPaymentOrder( param ) {
+		//get the web fee of partner here. either store it in payment database or field in partner.
+		//my suggestion is create a table in this domain, not the partner.	
+
+		param.webfee = 0.0; 
+		param.objid = param.paymentrefid;
+
+		def df = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		param.txndate = df.format(param.txndate);
+
+		return po_db.create( param );
+	} 
+
+	@ProxyMethod
+	public def getPaymentOrder( param ) {
+		return  po_db.find( [objid: param.refno ]  ).first();
+	}
+
+	@ProxyMethod
+	public def getPaymentPartnerOptions( param ) {
+		return optionEm.find( [partnerid : param.partnerid ] ).list(); 
+	}
+
+	@ProxyMethod
+	public def getPaymentPartnerOption( param ) {
+		return optionEm.find( [objid : param.payoption ] ).first(); 
+	}
+
+}

@@ -1,0 +1,28 @@
+<%
+   def svc = SERVICE.lookup("CloudPaymentService", "epayment");
+   def po = svc.getPaymentOrder( [refno: PARAMS.refno ] );
+   def payoption = svc.getPaymentPartnerOption( [payoption: PARAMS.payoption ] );
+   def formaction = payoption.paypartner.actionurl;
+   def formparams = [:];
+
+%>
+
+<h1>PAYMENT ORDER PARAMS</h1>
+<%po.each { k,v-> %>
+	<b>$k</b> = $v <br>
+<%}%>
+
+
+<h1>PAYOPTION PARAMS</h1>
+<%payoption.each { k,v-> %>
+	<b>$k</b> = $v <br>
+<%}%>
+
+<form id="postform" method="POST" action="${formaction}">
+	
+</form>
+
+
+<--script--> 
+\$('#postform').submit(); 
+</--script-->
