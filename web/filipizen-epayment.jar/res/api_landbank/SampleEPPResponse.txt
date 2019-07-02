@@ -1,0 +1,13 @@
+[
+"Status":"00", 
+"MerchantCode":"2016120039", 
+"MerchantRefNo":"1519356031982", 
+"Particulars":"Transaction_type=Business Permit;Name=TEST BAKERY;Tax Reference Number=1519356031982;", 
+"PayorName":"TEST BAKERY", 
+"PayorEmail":"", 
+"Amount":"125.50", 
+
+"EppRefNo":"305849", 
+"Datestamp":"2018-02-23 11:26:25", 
+"PaymentOption":"LANDBANK"
+]

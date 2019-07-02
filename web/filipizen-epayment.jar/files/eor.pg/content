@@ -1,7 +1,40 @@
 <%
-	def orgcode = "137";
-    def svc = SERVICE.lookup("CloudPartnerService", "partner");
-    def partner = svc.findById( [id: orgcode ] );
+	if(!PARAMS.receiptno && !PARAMS.refno )
+		throw new Exception("Please provide a receiptno or refno parameter");
+
+	def receiptno = PARAMS.receiptno;
+	def agency = PARAMS.info;
+		
+
+	//this should be applicable both with partner or without partner
+	def partnerid = PARAMS.info?.id;
+
+	if(partnerid == null) {
+		//this is called from the global context
+		def svc = SERVICE.lookup("CloudPaymentService", "epayment");
+		def p =[:];
+		if(PARAMS.receiptno) p.receiptno = PARAMS.receiptno;
+		else if(PARAMS.refno) p.refno = PARAMS.refno;
+
+		def rct = svc.getReceiptInfo( p );
+		partnerid = rct.partnerid;
+		receiptno = rct.receiptno;
+
+		def partnerSvc = SERVICE.lookup("CloudPartnerService", "partner");
+    	agency = partnerSvc.findById( [id: partnerid] ); 
+	}
+	else {
+		//this is called if under the partners context
+		if(PARAMS.refno) {
+			def svc = SERVICE.lookup("CloudPaymentService", "epayment");
+			def rct = svc.getReceiptInfo( [refno: PARAMS.refno ] );
+			receiptno = rct.receiptno;
+		}
+	}
+
+	if(!receiptno) 
+		throw new Exception("Receiptno is not provided or does not exist");
+
 %>
 
 <script>
@@ -9,14 +42,12 @@
 	var self = this;
 	this.error;
 	this.receipt;
-	this.receiptno = WindowUtil.getParameter("receiptno");
-	this.orgcode = "${orgcode}";
 
 	this.onload = function() {
-		var svc = Service.lookup(this.orgcode + ":EPaymentService");
-		svc.getReceipt( {receiptno: self.receiptno}, function(o,s) {
+		var svc = Service.lookup("${partnerid}:EPaymentService");
+		svc.getReceipt( {receiptno: "${receiptno}"}, function(o,s) {
 			if( s=="error") {
-				self.error = o.result;
+				self.error = "Receipt does not exist";
 			}
 			else {
 				self.error = null;
@@ -42,9 +73,8 @@
 		            <h1 class="eorno"><label r:context="eor">#{receipt.receiptno}</label></h1>
 		            <strong>Paid By : </strong> <label r:context="eor">#{receipt.paidby}</label><br />
 		            <strong>Address: </strong><label r:context="eor">#{receipt.paidbyaddress}</label><br />
-		            <strong>Particulars: </strong> <label r:context="eor">#{receipt.particulars}</label><br />
-		            <strong>Agency: </strong> ${partner.title}, ${partner.group.title}</label>
-
+		            <strong>Particulars: </strong> <label r:context="eor">#{receipt.remarks}</label><br />
+		            <strong>Agency: </strong> <label r:context="eor">${agency.title}, ${agency.group.title}</label>
 		        </div>
 		        <div class="qrdata col-md-5">
 		        	<img id='qrcode' src="https://api.qrserver.com/v1/create-qr-code/?data=${PARAMS.receiptno}&amp;size=250x250" width="150" height="150" class="img-responsive"/>					
@@ -97,7 +127,7 @@
 		            <br />
 		            <strong>Txn No.: </strong> <label r:context="eor">#{receipt.traceid}</label> 
 		            <br />
-		            <strong>Txn Date: </strong> <label r:context="eor">#{receipt.txndatestr}</label>
+		            <strong>Txn Date: </strong> <label r:context="eor">#{receipt.tracedate}</label>
 		        </div>
 		    </div>
 		    <hr>
@@ -115,9 +145,6 @@
     <hr class="hr-bottom">
 </div>
 
-
-
-
 <style>
 	@media print {
          .navbar-inverse{display:none}
@@ -126,4 +153,3 @@
          @page {size: auto;margin: 0mm;}
       }
 </style>
-

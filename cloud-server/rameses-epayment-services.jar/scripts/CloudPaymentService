@@ -15,6 +15,19 @@ class CloudPaymentService {
 	@DataContext('payment')
 	def pay_db;
 
+	@DataContext('payment_partner')
+	def paypartner_db;
+
+	@Service(dynamic=true) 
+	def remoteSvc;
+
+	@Service("DateService")
+	def dateSvc;
+
+	private def getRemoteService(def orgcode) {
+		return remoteSvc.lookup( orgcode + ":EPaymentService", "remote-script-mq" );
+	}
+
 	@ProxyMethod 
 	public def createPaymentOrder( param ) {
 		//get the web fee of partner here. either store it in payment database or field in partner.
@@ -29,9 +42,82 @@ class CloudPaymentService {
 		return po_db.create( param );
 	} 
 
+	@ProxyMethod 
+	public def cancelPaymentOrder( params ) {
+		po_db.find( [objid: params.refno ] ).delete();
+		getRemoteService(params.orgcode).cancelPaymentOrder(params);
+		return "ok";
+	} 
+
+
+	@ProxyMethod
+	public def getPostPaymentParams(def o) {
+		return [paypartner: o.paypartner];		
+	}
+
+	@ProxyMethod 
+	public def postPayment( def parms ) {
+		//call params here. must intercept
+		def payPartner = paypartner_db.find( [objid: parms.paypartnerid] ).first();
+		parms.paypartner = payPartner;
+
+		def pmt = self.getPostPaymentParams(parms);
+		if(!pmt) throw new Exception("Error in post payment. Parameters passed in posting payment must not be empty;")
+
+		if(!pmt.paypartnerid) throw new Exception("error postPayment. paypartnerid is required");
+
+		//update the payment order here
+		def po = po_db.find( [objid: pmt.paymentrefid ] ).first();
+		def orgcode = po.orgcode;
+
+		pmt.partner = [objid: pmt.paypartnerid];
+		pmt.txndate = dateSvc.getServerDate();
+
+		//we use partnerid to refer to pay partner so as not to disrupt existing code in the lgu.
+		def pay = pay_db.create( pmt );
+
+		pay.txntype = po.txntype
+		pay.orgcode	= orgcode; 
+		pay.partnerid = payPartner.objid; 
+		pay.partnercode = payPartner.code;
+		pay.refno = po.refno; 
+		pay.origin = po.origin;
+		pay.txntypename = po.txntypename;
+
+		//you need the ff for payment
+		if(!pay.txntype) throw new Exception("error remote postPayment. txntype is required");
+        if(!pay.paymentrefid) throw new Exception("error remote postPayment. paymentrefid is required"); 
+        if(!pay.tracedate) throw new Exception("error remote postPayment. tracedate is required");
+        if(!pay.traceid) throw new Exception("error remote postPayment. traceid is required");    
+        if(!pay.partnerid) throw new Exception("error remote postPayment. partnerid is required");    
+		if(!pay.partnercode) throw new Exception("error remote postPayment. partnercode is required"); 
+        if(!pay.refno) throw new Exception("error remote postPayment. refno is required");    
+        if(!pay.origin) throw new Exception("error remote postPayment. origin is required");    
+        if(!pay.txntypename) throw new Exception("error remote postPayment. txntypename is required");    
+		if(!pay.orgcode) throw new Exception("error remote postPayment. orgcode is required"); 
+
+		getRemoteService(orgcode).postPayment( pay );
+
+		pmt.info = po;
+		return pmt;
+	} 
+
+	//this is called back by the gdx-client
+	@ProxyMethod 
+	public def updatePaymentReceipt( def pmt ) {
+		//update the payment reference
+		pay_db.find( [paymentrefid: pmt.paymentrefid ] ).update( pmt );
+	} 
+
 	@ProxyMethod
 	public def getPaymentOrder( param ) {
-		return  po_db.find( [objid: param.refno ]  ).first();
+		def o =  po_db.find( [objid: param.refno ]  ).first();
+		if( o ) {
+			if(o.webfee==null) o.webfee = 0;
+			o.total = o.amount + o.webfee;
+		}
+		if(o.payment?.objid) o.paid = true;
+		return o;
 	}
 
 	@ProxyMethod
@@ -41,7 +127,36 @@ class CloudPaymentService {
 
 	@ProxyMethod
 	public def getPaymentPartnerOption( param ) {
-		return optionEm.find( [objid : param.payoption ] ).first(); 
+		def paypartneroption = optionEm.find( [objid : param.payoption ] ).first(); 
+		def paypartner = paypartneroption.paypartner;
+		if( paypartneroption.info ) {
+			paypartner.info.putAll( paypartneroption.remove("info") );
+		}		
+		return paypartneroption;
+	}
+
+	/*************************************************************************************************
+	* This is called when asking to display EOR. This will return the receipt number and orgcode 
+	*************************************************************************************************/
+	@ProxyMethod
+	public def getReceiptInfo( def o ) {
+		if(o.receiptno) {
+			def rct = pay_db.find( [receiptno: o.receiptno ] ).first();
+			if( rct ) {
+				return [partnerid: rct.paymentorder.orgcode, receiptno: rct.receiptno ];
+			}
+			throw new Exception("Receipt no does not exist");
+		}
+		else if( o.refno ) {
+			def po = po_db.find( [objid: o.refno ] ).first();
+			if( po ) {
+				if(!po.payment?.objid) throw new Exception("This transaction has not yet been paid. ");
+				if(!po.payment?.receiptno) throw new Exception("This transaction does not yet have an associated electronic receipt. If you have a already paid, the OR might still be processed. Please inquire with the agency");
+				return [partnerid: po.orgcode, receiptno: po.payment.receiptno];
+			}
+			throw new Exception("This payment reference does not exist");
+		}	
+		throw new Exception("Please provide receiptno or refno parameter");
 	}
 
 }

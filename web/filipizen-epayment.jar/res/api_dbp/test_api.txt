@@ -1,0 +1,19 @@
+URL: http://rs2test-ipg.devbnkphl.com:8080/cfusion/paymentgateway/merchant.html
+INFO: 
+[
+merchantid: 111880000490025,
+terminalid: 11100025, 
+transactionkey: "E21F9B44C0DBD66F4A4E9C70CCE3B0A2", 
+actionurl: "http://rs2test-ipg.devbnkphl.com:8080/cfusion/paymentgateway/merchant.html"
+]
+
+=========================================================
+
+URL: https://testipg.apollo.com.ph:8443/transaction/verify
+INFO: 
+[
+terminalid:56, 
+transactionkey:"5f16150a98195379b69b525626cf41c41d79b33d", 
+actionurl:"https://testipg.apollo.com.ph:8443/transaction/verify"
+]
+

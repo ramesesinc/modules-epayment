@@ -1,0 +1,28 @@
+[Sample Request]
+
+<form method="POST" action="https://testipg.apollo.com.ph:8443/transaction/verify">
+	<input type="submit" value="DBP" class="thumbnail">
+	<input type="hidden" name="terminalID" value="56">
+	<input type="hidden" name="referenceCode" value="195000J5J3HCMK3587">
+	<input type="hidden" name="serviceType" value="Business Permit">
+	<input type="hidden" name="amount" value="1669.80">
+	<input type="hidden" name="securityToken" value="f2f795aaddc0d07cee82ea184e0d533e0ee55d6c">
+</form>
+
+
+[Sample Response]
+[
+	"responseCode":"06", 
+	"securityToken":"7421dd539656842fede66b0af5d4cad6eb26e4ff", 
+	"merchantName":"LGU TAGBILARAN - IPG", 
+	"referenceCode":"195000J5J3HCMK3587", 
+	"serviceFeeLabel":"Service Fee", 
+	"serviceType":"Business Permit", 
+	"serviceChargeFee":"33.40", 
+	"amount":"1669.80", 
+	"total":"1703.2", 
+	"interceptor":"verify", 
+	"message":"Bank system failed to respond. Please try again or use a different card.", 
+	"disableEmailClient":"true", 
+	"serviceChargeFeeText":"PHP33.40"
+]

@@ -1,0 +1,72 @@
+<%
+def m = [:]; 
+boolean pass = false; 
+try { 
+	def dateSvc = SERVICE.lookup("DateService"); 
+	PARAMS.tracedate = dateSvc.getServerDate(); 
+	PARAMS.traceid = com.rameses.util.Encoder.MD5.encode(new java.rmi.server.UID().toString()); 
+	PARAMS.partnercode = 'TEST'; 
+	PARAMS.showdetails = true;
+
+	def svc = SERVICE.lookup("FilipizenPaymentService"); 
+	m = svc.postReceipt( PARAMS ); 
+	if ( m.status > 0 ) throw new Exception( m.message ); 
+
+	def cname = m.partnerinfo?.clusterid; 
+	def pname = m.partnerinfo?.name; 
+	m.partnerkey = cname.toString() +'_'+ pname.toString(); 
+	pass = true; 
+} 
+catch(Throwable t) {
+	def errmsg = t.message; 
+	if ( !errmsg ) {
+		def cause = t.cause; 
+		while ( cause != null ) {
+			errmsg = cause.message; 
+			if ( errmsg ) break; 
+		}
+	}	
+
+	m.errmsg = errmsg.toString(); 
+	t.printStackTrace(); 
+}
+
+%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" itemscope="" itemtype="http://schema.org/">
+<head>
+    <title> Test Payment </title> 
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=IE7" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="title" content="Test Payment" />
+    <meta itemprop="name" content="Test Payment" />
+    <meta property="og:title" content="Test Payment" />
+    <meta name="Description" content="Test Payment" />
+    <meta itemprop="description" content="Test Payment" />
+    <meta property="og:description" content="Test Payment" />
+
+    @stdlib()
+   
+    @page-imports()
+</head>
+<body> 
+
+<% if (!pass) {%>
+  <pre style="margin:10px;">${m.errmsg.toString()}</pre>
+
+<% } else { %> 
+
+<form id="form1" method="POST" action="/payoptions/${m.partnerkey}/successinit">
+	<input type="hidden" name="paymentrefid" value="${m.paymentrefid}"/> 
+	<input type="hidden" name="orgcode" value="${m.orgcode}"/> 
+</form> 
+<script> 
+\$('#form1').submit(); 
+</script>
+
+<% } %> 
+
+</body>
+</html>

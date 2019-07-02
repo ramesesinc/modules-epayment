@@ -21,14 +21,11 @@ class EORNumberService {
     def orgSvc 
 
     @ProxyMethod(local=true)
-    public def getNextEORNumber( def partnerid ) {
+    public def getNextEORNumber( def partnercode ) {
         def org = orgSvc.getRoot(); 
         def orgid = (org?.objid ? org.objid : '');
 
-        def part = partnerEm.find([ objid: partnerid ]).first(); 
-        def indexno = (part?.indexno ? part.indexno : ''); 
-
-        String prefix = 'EOR'+ indexno + orgid + dateService.getServerYear();
+        String prefix = 'EOR'+ partnercode + orgid + dateService.getServerYear();
         def rec = num_db.find([ objid: prefix ]).first();
         if ( !rec ) num_db.create([ objid: prefix, currentno: 0 ]);
 

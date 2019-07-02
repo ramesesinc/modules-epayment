@@ -14,6 +14,9 @@ class EPaymentService  {
     @Service(value="DateService", connection="local-etracs")
     def dateSvc;
 
+    @Service("NumberService")
+    def numSvc;
+
     @ProxyMethod
     public def createPaymentOrder(def params) {
         if(!params.refno) throw new Exception("Please indicate a billing refno");
@@ -26,9 +29,8 @@ class EPaymentService  {
             po.origin = params.origin;
             cloudSvc.createPaymentOrder( po );
 
-            //activate the state:
+            //activate the state. activated means it is actually updated in the cloud.
             localSvc.activatePaymentOrder( [objid:po.objid] );
-
             return po;
         }
         catch(e) {
@@ -37,34 +39,35 @@ class EPaymentService  {
     }
 
     @ProxyMethod
-    public def getReceipt( def o ) {
-        def rct = [
-            receiptno: o.receiptno,
-            paidby: "elmo",
-            paidbyaddress: "cebu city",
-            particulars: 'Business Payment',
-            amount: 200.00, 
-            amountinwords: 'TWO HUNDRED PESOS ONLY',
-            partner: [name: 'LANDBANK'],
-            traceid: '126788912',
-            txndatestr: '2018-01-01'               
-        ];
-        rct.items = [];
-        rct.items << [item: [title: 'Business Tax', remarks:'Sari sari store'], amount : 100];
-        rct.items << [item: [title: 'Mayors Permit', remarks:'Sari sari store'], amount : 100];
+    public def cancelPaymentOrder(def params) {
+        localSvc.cancelPaymentOrder( [refno: params.refno ]);
+        return [status: 'OK'];
+    }
 
-        return rct;
-        /*
-        return svc.getReceipt( o );
-        */
+    @ProxyMethod
+    public def getBilling( def params ) {
+        if(!params.refno) throw new Exception("Please indicate a billing refno");
+        def bill = localSvc.getBilling(  params );
+        if(!bill) throw new Exception("No record found for " + params.refno);
+        if(bill.status == 1 ) throw new Exception( bill.message );
+        return bill;
     }
 
     @ProxyMethod
     public def postPayment( def p ) {
-        println "POSTING PAYMENT ION GDX CLIENT " + p;
-        return [status:"ok"];
+        def r = localSvc.postPayment( p );
+        if(r !=null ) {
+            cloudSvc.updatePaymentReceipt( r );
+        }
+        else {
+            return [status: "error"]
+        }
     }
 
+    @ProxyMethod
+    public def getReceipt( def o ) {
+        return localSvc.getReceipt( o );
+    }
 
 }
 

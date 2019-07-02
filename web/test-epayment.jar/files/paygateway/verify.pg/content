@@ -1,0 +1,106 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" itemscope="" itemtype="http://schema.org/">
+ <head>
+    <title> Test Payment </title> 
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=IE7" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="title" content="Test Payment" />
+    <meta itemprop="name" content="Test Payment" />
+    <meta property="og:title" content="Test Payment" />
+    <meta name="Description" content="Test Payment" />
+    <meta itemprop="description" content="Test Payment" />
+    <meta property="og:description" content="Test Payment" />
+
+    @stdlib()
+   
+    @page-imports()
+
+<style>
+center.header { 
+	color: #27ae60; font-size: 1.5em; font-weight:bold; margin:20px; 
+}
+table.datatable td.field {
+	padding:5px; border:1px solid #808080;
+}
+table.datatable td.fieldname {
+	width: 150px; border:0px;
+}
+table.datatable td.fieldvalue {
+	width: 350px; 
+}
+table.datatable td.noborder { border:0px; }
+input.value { padding:2px; width:50%; }
+input.submit { padding:5px 10px 5px 10px; width:50%; }
+</style>
+</head>
+<body id="home-page">
+
+<%
+def numformat = new java.text.DecimalFormat('#,##0.00'); 
+def amountstr = PARAMS.amount.toString(); 
+if ( PARAMS.amount instanceof Number ) {
+	amountstr = numformat.format( PARAMS.amount );
+} 
+%>
+
+<script>
+\$put("model", new function(){
+
+	this.submit = function() {
+		\$('#form1').submit(); 
+	}
+
+}); 
+</script> 
+
+
+
+<center class="header"> Test Online Payment </center>
+
+<table class="datatable" cellpadding="0" cellspacing="5" border="0" align="center">
+<tr>
+	<td class="field fieldname">Merchant : </td>
+	<td class="field fieldvalue"> ${PARAMS.merchantname} </td>
+</tr>
+<tr>
+	<td class="field fieldname">Reference No. : </td>
+	<td class="field fieldvalue"> ${PARAMS.paymentrefid} </td>
+</tr>
+<tr>
+	<td class="field fieldname">Particulars : </td>
+	<td class="field fieldvalue"> ${PARAMS.particulars} </td>
+</tr>
+<tr>
+	<td class="field fieldname">Amount : </td>
+	<td class="field fieldvalue"> ${amountstr} </td>
+</tr>
+<tr>
+	<td colspan="2" style="padding-top:40px; padding-bottom:10px;border:0px;">
+		<b>To proceed, please enter the following details: </b>
+	</td> 
+</tr>
+<tr>
+	<td class="field fieldname">Card Number : </td>
+	<td class="field noborder"> <input type="text" class="value"/> </td>
+</tr>
+<tr>
+	<td class="field fieldname">PIN : </td>
+	<td class="field noborder"> <input type="text" class="value"/> </td>
+</tr>
+<tr>
+	<td>&nbsp;</td>
+	<td class="field noborder"> 
+		<input class="submit" type="button" r:context="model" r:name="submit" value="Confirm Payment"/> 
+		<form id="form1" method="POST" action="/test/paygateway/send"> 
+		<% PARAMS.each{ k,v-> %> 
+			<input type="hidden" name="${k}" value="${v}"/> 
+	    <% } %> 
+		</form>  
+	</td>
+</tr>
+</table> 
+
+</body>
+<script src="/js/bootstrap.min.js"></script>
+</html>

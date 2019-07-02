@@ -18,6 +18,15 @@
 		<field name="expirydate"/>  
 		<field name="webfee" required="true" type="decimal"/>  
 		<field name="cachekey"/>  
+
+		<field name="origin"/>  
+		<field name="origin"/>  
+		<field name="origin"/>  
+
+
+		<complex name="payment" ref="payment" jointype="many-to-one" required="false" includefields="objid,receiptid,receiptno">
+			<key field="objid" target="paymentrefid" />
+		</complex>	
 	</element>
 </schema>
 

@@ -32,7 +32,9 @@ class OnlinePaymentService   {
     @Service("EORNumberService") 
     def seqSvc; 
 
-    
+    @Service("NumberService")
+    def numSvc;
+
 
     private void initEnv() {
         env.USERID = 'E-PAYMENT'; 
@@ -103,6 +105,11 @@ class OnlinePaymentService   {
         poEm.find( [objid: o.objid ] ).update( [state: 'ACTIVE'] );
     }
 
+    @ProxyMethod
+    public void cancelPaymentOrder(def o ) {
+        poEm.find( [objid: o.refno ] ).delete();
+    }
+
     @ProxyMethod(local=true)
     public def postPayment( def o ) {
         initEnv(); 
@@ -118,6 +125,7 @@ class OnlinePaymentService   {
         }
 
         po.paymentrefid = po.objid; 
+        po.partnercode = o.partnercode;
         po.partnerid = o.partnerid; 
         po.tracedate = o.tracedate; 
         po.traceid = o.traceid;
@@ -152,11 +160,13 @@ class OnlinePaymentService   {
             unpostedpayment_db.create( m );  
             retval = null; 
         } 
-        
-        if ( pass ) { 
-            poEm.find([ objid: po.objid ]).delete(); 
-            unpostedpayment_db.find([ paymentrefid: po.objid ]).delete(); 
-        } 
+        /* 
+        //if ( pass ) { 
+            //hide this. we do not want to delete the payment order.
+            //poEm.find([ objid: po.objid ]).delete(); 
+            //unpostedpayment_db.find([ paymentrefid: po.objid ]).delete(); 
+        //} 
+        */
         return retval; 
     }
 
@@ -170,6 +180,15 @@ class OnlinePaymentService   {
         if(!rc) {
             throw new Exception("Receipt " + o + " not found");
         }
+        //get amount in words
+        if ( rc?.amount instanceof Number ) { 
+            if( rc.amount < 1 ) { 
+                def amount = Long.parseLong( rc.amount.toString().split("\\.")[1] ); 
+                rc.amountinwords = numSvc.doubleToWords( amount ).toUpperCase() + " CENTAVOS"; 
+            } else { 
+                rc.amountinwords = numSvc.doubleToWords( rc.amount ).toUpperCase() + " PESOS ONLY";
+            } 
+        } 
         return rc; 
     } 
 
