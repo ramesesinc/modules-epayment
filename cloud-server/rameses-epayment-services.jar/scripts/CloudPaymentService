@@ -84,7 +84,7 @@ class CloudPaymentService {
 		pay.origin = po.origin;
 		pay.txntypename = po.txntypename;
 
-		//you need the ff for payment
+		//you need the ff for payment. for developers this will not occur in production
 		if(!pay.txntype) throw new Exception("error remote postPayment. txntype is required");
         if(!pay.paymentrefid) throw new Exception("error remote postPayment. paymentrefid is required"); 
         if(!pay.tracedate) throw new Exception("error remote postPayment. tracedate is required");
@@ -115,8 +115,8 @@ class CloudPaymentService {
 		if( o ) {
 			if(o.webfee==null) o.webfee = 0;
 			o.total = o.amount + o.webfee;
+			if(o.payment?.objid) o.paid = true;			
 		}
-		if(o.payment?.objid) o.paid = true;
 		return o;
 	}
 

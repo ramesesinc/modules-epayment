@@ -1,0 +1,23 @@
+import com.rameses.annotations.*;
+
+class PaymentSMSInterceptorService {
+
+	@Service(value="SMSAPI", connection="sms-service")
+	def smsApi;
+
+	@DataContext('paymentorder')
+	def po_db;
+
+	@After(pattern="CloudPaymentService.updatePaymentReceipt")
+	public void smsAfterReceiptConfirmed( def evt ) {
+		def pmt = evt.args[0];
+		def v = po_db.find( [paymentrefid: pmt.paymentrefid ] ).select("email,mobileno").first();
+		if(v.mobileno) {
+			def m = [:];
+			m.phoneno = v.mobileno;
+			m.message = "Your receipt has been processed. Your receipt no is " + v.payment?.receiptno;	
+			smsApi.send( m );
+		}
+	}
+
+}

@@ -49,12 +49,12 @@
 <br>
 <h2>Order of Payment</h2>
 
-<div style="padding-top:20px" r:context="paymodel" r:visibleWhen="#{err != null }">
+<div style="padding-top:20px" r:context="paymodel" r:visibleWhen="#{err != null }" style="display:none;">
   <label r:context="paymodel" style="color:red">#{err}</label>
 </div>
 
 
-<div r:context="paymodel" r:visibleWhen="#{err == null }"> 
+<div r:context="paymodel" r:visibleWhen="#{err == null }" style="display:none;"> 
   <div class="form">
     
 <div>

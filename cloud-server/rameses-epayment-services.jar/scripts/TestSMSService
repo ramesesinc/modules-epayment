@@ -1,0 +1,14 @@
+import com.rameses.annotations.*;
+import com.rameses.webapi.common.APIException;
+
+class TestSMSService {
+
+	@Service(value="SMSAPI", connection="sms-service")
+	def smsApi;
+
+	@ProxyMethod
+	public void testSend(  def pmt ) {
+		smsApi.send( pmt );
+	}
+
+}
