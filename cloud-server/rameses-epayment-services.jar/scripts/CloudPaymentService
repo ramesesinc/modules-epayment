@@ -83,6 +83,7 @@ class CloudPaymentService {
 		pay.refno = po.refno; 
 		pay.origin = po.origin;
 		pay.txntypename = po.txntypename;
+		if(!pay.txntypename) pay.txntypename = pay.txntype;
 
 		//you need the ff for payment. for developers this will not occur in production
 		if(!pay.txntype) throw new Exception("error remote postPayment. txntype is required");
@@ -118,6 +119,11 @@ class CloudPaymentService {
 			if(o.payment?.objid) o.paid = true;			
 		}
 		return o;
+	}
+
+	@ProxyMethod
+	public def getPaymentPartner(def o ) {
+		return paypartner_db.find( o ).first();
 	}
 
 	@ProxyMethod

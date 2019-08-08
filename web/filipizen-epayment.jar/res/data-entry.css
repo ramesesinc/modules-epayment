@@ -19,17 +19,22 @@
 .navbar-nav li a{color: #ffffff;}
 .navbar-nav li a:hover, .navbar-nav li>a:focus {background-color: #232d35;}
 
+
 /* Phone */
 @media (min-width: 320px){
     #holder{width:100%;display:inline-block;column-count:1;text-align:left;margin: 0 auto;}
     .box p {font-size: 18px;text-align: left;}
+    .box-eor{margin-top: 10px;}
+    .img-responsive {float: left;padding-top: 10px}
 }
 
 /*pc monitor */
 @media (min-device-width: 1200px){ 
-    #holder{width:100%;display:inline-block;column-count:4;text-align:left;margin: 0 auto;}
+    #holder{width:100%;display:inline-block;column-count:4;text-align:left;float: right;}
     .box p {font-size: 14px;}
     .box p a{color: #a9a7a7;}
+    .box-eor{padding: 20px 200px 20px 200px;}
+    .img-responsive {float: right;}
 }
 
 /*pc monitor */

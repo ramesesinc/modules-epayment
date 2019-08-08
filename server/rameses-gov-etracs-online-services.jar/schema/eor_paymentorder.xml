@@ -18,6 +18,9 @@
 		<field name="locationid" />
 		<field name="origin" />
 		
+		<field name="email" />
+		<field name="mobileno" />
+
 		<complex name="info" serializer="default" required="true"/>
 		<complex name="items" serializer="default" required="false" type="list" />
 	</element>

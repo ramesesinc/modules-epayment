@@ -1,0 +1,43 @@
+<%
+Random rand = new Random();
+def otp = rand.nextInt(9999999);
+def traceid = String.format("%012d", otp).substring(0,12);
+
+def sdt = new java.text.SimpleDateFormat("EEE MMM dd HH:mm:ss Z yyyy");
+def date = sdt.format( new Date() );
+
+def p = [:];	
+p.amount = PARAMS.amount;
+p.date = date;
+p.disableEmailClient = "true";
+p.interceptor = "verify";
+p.merchantName = "TEST LGU - IPG";
+p.message = "Successful approval/completion.";
+p.referenceCode = PARAMS.referenceCode;
+p.retrievalReferenceCode = traceid;
+p.serviceChargeFee = PARAMS.serviceChargeFee;
+p.serviceChargeFeeText = PARAMS.serviceChargeFeeText;
+p.serviceFeeLabel =  "Service Fee"
+p.serviceType = PARAMS.serviceType
+p.total = PARAMS.total;
+
+def svc = SERVICE.lookup("CloudPaymentService", "epayment");
+def partner = svc.getPaymentPartner([objid: 'DBP'])
+
+def secval = partner.info?.terminalid + p.referenceCode + '{' + partner.info?.transactionkey + '}'; 
+def requestToken = com.rameses.util.Encoder.SHA1.encode(secval);
+p.securityToken = com.rameses.util.Encoder.SHA1.encode(requestToken + '{' + partner.info?.transactionkey + '}'); 
+%>
+
+<script> 
+\$put("success", new function() {
+   this.onload = function() {
+      \$('#postform').submit();     
+   }
+});
+</script>
+
+<form id="postform" method="POST" action="/payoptions/dbpsuccess">
+	<%p.each {k,v-> %><input type="hidden" name="${k}" value="${v}"/><%}%>
+</form>
+

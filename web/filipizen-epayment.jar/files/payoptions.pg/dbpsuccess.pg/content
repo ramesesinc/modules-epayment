@@ -2,11 +2,18 @@
 	//we must check here that the transaction key being passed around matches
 	def svc = SERVICE.lookup("CloudPaymentService", "epayment");
 	PARAMS.paypartnerid = 'DBP';
+
 	def pmt = svc.postPayment( PARAMS );
 	pmt.orgcode = pmt.info.orgcode;
 	pmt.particulars = pmt.info.particulars;
 	pmt.paypartnercode = pmt.paypartnerid;
 %>
+
+<form id="postform" method="POST" action="/epayment/paysuccess">
+	<%pmt.each{ k,v-> %>
+		<input type="hidden" name="${k}" value="${v}"/>
+	<%}%>
+</form>
 
 <script> 
 \$put("success", new function() {
@@ -15,9 +22,3 @@
    }
 });
 </script>
-
-<form id="postform" method="POST" action="/epayment/paysuccess">
-<%pmt.each{ k,v-> %>
-<input type="hidden" name="${k}" value="${v}"/>
-<%}%>
-</form>

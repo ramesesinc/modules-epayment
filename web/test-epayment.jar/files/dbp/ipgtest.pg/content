@@ -1,0 +1,207 @@
+    <%
+    def amount = PARAMS.amount.toDouble();    
+    def fee = com.rameses.util.NumberUtil.round( amount * 0.02 ); 
+    def total = com.rameses.util.NumberUtil.round( amount + fee );
+    %>
+
+
+
+        <title>Online Payment</title>
+        <link rel="stylesheet" href="/res/test-epayment/dbp/css/main.css">
+        <link rel="shortcut icon" href="/res/test-epayment/dbp/images/favicon.ico" type="image/x-icon">
+        <script src="/res/test-epayment/dbp/main.js"></script>
+        <script type="text/javascript" src="/res/test-epayment/dbp/application.js"></script>
+        <script type="text/javascript" src="/res/test-epayment/dbp/prototype/prototype.js"></script>
+        
+        
+        <meta name="layout" content="pay">
+        
+        
+    </head>
+    <body>
+        
+    	<center>
+    	<div style="width: 800px; text-align: center;">
+	        <div id="appLogo">
+	        	<div class="logo" style="float: right;">
+		        	<img src="/res/test-epayment/dbp/images/DBP-Logo-Platinum.jpg" alt="ApolloPaymentHost" border="0" height="70">
+	        	</div>
+	        </div>
+	        
+        <div>
+        	<center><h1 style="padding-left:70px;font-size: 18;">Online Payment</h1></center>
+		
+            <form action="/ipgpost" method="post" name="paymentForm" onsubmit="return validate(this);" id="paymentForm">
+			<input type="hidden" name="terminalID" value="${PARAMS.terminalID}">
+			<input type="hidden" name="amount" value="${amount}">
+            <input type="hidden" name="serviceChargeFee" value="${fee}">
+            <input type="hidden" name="total" value="${total}">
+
+			<input type="hidden" name="referenceCode" value="${PARAMS.referenceCode}">
+			<input type="hidden" name="serviceType" value="${PARAMS.serviceType}">
+
+                <div class="dialog">
+                
+                    <table>
+                        <tbody>
+                        	<tr class="prop">
+                                <td valign="top" class="name">
+                                    <label for="merchantName">Merchant:</label>
+                                </td>
+                                <td valign="top" class="value">
+                                        <input type="text" size="40" id="merchantNameText" name="merchantNameText" readonly="true" value="TEST LGU - IPG">
+                                </td>
+                            </tr>
+                        	<tr class="prop">
+                                <td valign="top" class="name">
+                                    <label for="description">Description:</label>
+                                </td>
+                                <td valign="top" class="value">
+                               			<textarea id="descriptionText" name="descriptionText" rows="3" cols="39" readonly="true">${PARAMS.serviceType}</textarea>
+                                        
+                                </td>
+                            </tr>
+                        	<tr class="prop">
+                                <td valign="top" class="name">
+                                    <label for="refCode">Reference Code:</label>
+                                </td>
+                                <td valign="top" class="value">
+                                        <input type="text" size="40" id="referenceCodeText" name="referenceCodeText" readonly="true" value="${PARAMS.referenceCode}">
+                                </td>
+                            </tr>
+                        	<tr class="prop">
+                                <td valign="top" class="name">
+                                    <label for="amount">Amount:</label>
+                                </td>
+                                <td valign="top" class="value">
+                                        <input type="text" size="40" id="amountText" name="amountText" readonly="true" value="PHP${amount}">
+                                </td>
+                            </tr>
+                            
+                             <tr class="prop">
+                                <td valign="top" class="name">
+                                    <label for="serviceChargeFee">Service Fee: </label>
+                                </td>
+                                <td valign="top" class="value">
+                                <input type="text" size="40" id="serviceChargeFeeText" name="serviceChargeFeeText" readonly="true" value="PHP${fee}">
+                                </td>
+                            </tr>
+                            <tr class="prop">
+                                <td valign="top" class="name">
+                                    <label for="total">Total:</label>
+                                </td>
+                                <td valign="top" class="value">
+                                        <input type="text" size="40" id="totalText" name="totalText" readonly="true" value="PHP${total}">
+                                </td>
+                            </tr> 
+                            
+                            
+                    	</tbody>
+                    </table>
+                    <br>
+                        
+                    <table>
+                        <tbody>
+                        	<tr class="prop">
+                        		<td valign="top" class="name" colspan="2">
+                        			<h3>To proceed, please enter the following details:</h3>
+                        		</td>
+                        	</tr>
+                            <tr class="prop">
+                                <td valign="top" class="name">
+                                    <label for="pan">Card Number:</label>
+                                </td>
+                                <td valign="top" class="value">
+        
+
+                                        <input type="text" pattern="^[^-]*\$"  title="Do not add space and dashes"   size="28" id="pan" name="pan" value="">
+                                        <span><em>(Do not add space and dashes)</em></span>
+                                </td>
+                            </tr> 
+
+                            <tr class="prop">
+                                <td valign="top" class="name">
+                                    <label for="cvv2">CVV2:</label>
+                                </td>
+                                <td valign="top" class="value">
+                                        <input type="text" size="28" id="cvv2" name="cvv2" value="">
+                                </td>
+                            </tr> 
+                        
+                            <tr class="prop">
+                                <td valign="top" class="name">
+                                    <label for="expiryDate">Expiry Date (MM/YYYY):</label>
+                                </td>
+                                <td valign="top" class="value">
+                                        <select name="expiryDateMonth" id="expiryDateMonth">
+<option value=""></option>
+<option value="01">01</option>
+<option value="02">02</option>
+<option value="03">03</option>
+<option value="04">04</option>
+<option value="05">05</option>
+<option value="06">06</option>
+<option value="07">07</option>
+<option value="08">08</option>
+<option value="09">09</option>
+<option value="10">10</option>
+<option value="11">11</option>
+<option value="12">12</option>
+</select>
+                                        <select name="expiryDateYear" id="expiryDateYear">
+<option value=""></option>
+<option value="2019">2019</option>
+<option value="2020">2020</option>
+<option value="2021">2021</option>
+<option value="2022">2022</option>
+<option value="2023">2023</option>
+<option value="2024">2024</option>
+<option value="2025">2025</option>
+<option value="2026">2026</option>
+<option value="2027">2027</option>
+<option value="2028">2028</option>
+<option value="2029">2029</option>
+</select>
+                                </td>
+                            </tr>
+                      
+                        </tbody>
+                    </table>
+                    <br>
+                    
+                    <table>
+                    	<tbody>
+                              
+                    	</tbody>
+                    </table>
+                </div>
+                <div>
+
+                 <div class="loader" id="loader" style="display:none;">
+                    <span class="loader-item"></span>
+                    <span class="loader-item"></span>
+                    <span class="loader-item"></span>
+                    <span class="loader-item"></span>
+                    <span class="loader-item"></span>
+                    <span class="loader-item"></span>
+                    <span class="loader-item"></span>
+                    <span class="loader-item"></span>
+                    <span class="loader-item"></span>
+                    <span class="loader-item"></span>
+                 </div>
+
+                <div class="buttons" style="text-align: center;">
+                    <span class="button"><input id="submitButton" class="send" type="submit" value="Confirm Payment" style="font-size: 18;"></span>
+                </div>
+            
+
+                
+        </div></form>
+
+
+    
+        </div>
+        </div></center>
+    
+
+</body></html>

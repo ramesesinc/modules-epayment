@@ -134,11 +134,17 @@ class OnlinePaymentService   {
         def retval = [:]; 
         boolean pass = false; 
         try { 
+            println "ABOUT TO POST THE PAYMENT EOR";
             r = eorSvc.post( po ); 
             retval.paymentrefid =  r.paymentrefid;
             retval.receiptno = r.receiptno;
             retval.receiptid = r.objid;
             retval.receiptdate = r.receiptdate; 
+
+            //set the contact info like email and email for notification
+            retval.email = po.email;
+            retval.mobileno = po.mobileno;
+
             pass = true; 
         } 
         catch(Throwable t) { 
@@ -160,13 +166,7 @@ class OnlinePaymentService   {
             unpostedpayment_db.create( m );  
             retval = null; 
         } 
-        /* 
-        //if ( pass ) { 
-            //hide this. we do not want to delete the payment order.
-            //poEm.find([ objid: po.objid ]).delete(); 
-            //unpostedpayment_db.find([ paymentrefid: po.objid ]).delete(); 
-        //} 
-        */
+
         return retval; 
     }
 
