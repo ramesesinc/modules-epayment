@@ -49,8 +49,8 @@
 
 	this.loadReceipt = function( handler ) {
 		var svc = Service.lookup("${partnerid}:EPaymentService");
-		svc.getReceipt( {receiptno: "${receiptno}"}, function(o,s) {
-			if( s=="error") {
+		svc.getReceipt( {receiptno: "${receiptno}"}, function(s,o) {
+			if( s.status =="ERROR") {
 				self.error = "Receipt does not exist";
 			}
 			else {
