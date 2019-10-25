@@ -136,6 +136,11 @@ class OnlinePaymentService   {
         try { 
             println "ABOUT TO POST THE PAYMENT EOR";
             r = eorSvc.post( po ); 
+
+            //we also transfer to paid and delete the eor_payment order
+            poEm.movePaymentOrderToPaid( [paymentrefid: r.paymentrefid ] );
+            poEm.find( [objid: r.paymentrefid] ).delete();
+
             retval.paymentrefid =  r.paymentrefid;
             retval.receiptno = r.receiptno;
             retval.receiptid = r.objid;

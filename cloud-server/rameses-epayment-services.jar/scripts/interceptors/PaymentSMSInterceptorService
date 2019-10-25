@@ -6,13 +6,13 @@ class PaymentSMSInterceptorService {
 	@Service(value="SMSService", connection="email-sms-server")
 	def smsSvc;
 
-	@DataContext('paymentorder')
+	@DataContext('paymentorder_paid')
 	def po_db;
 
 	@After(pattern="CloudPaymentService.updatePaymentReceipt")
 	public void smsAfterReceiptConfirmed( def evt ) {
 		def pmt = evt.args[0];
-		def v = po_db.find( [paymentrefid: pmt.paymentrefid ] ).select("email,mobileno").first();
+		def v = po_db.find( [objid: pmt.paymentrefid ] ).select("email,mobileno").first();
 		if(v.mobileno) {
 			 try {
                 def m = [:];

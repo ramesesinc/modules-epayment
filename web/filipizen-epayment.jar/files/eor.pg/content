@@ -8,7 +8,7 @@
 
 	//this should be applicable both with partner or without partner
 	def partnerid = PARAMS.info?.id;
-
+	def rct = null;
 	if(partnerid == null) {
 		//this is called from the global context
 		def svc = SERVICE.lookup("CloudPaymentService", "epayment");
@@ -16,7 +16,7 @@
 		if(PARAMS.receiptno) p.receiptno = PARAMS.receiptno;
 		else if(PARAMS.refno) p.refno = PARAMS.refno;
 
-		def rct = svc.getReceiptInfo( p );
+		rct = svc.getReceiptInfo( p );
 		partnerid = rct.partnerid;
 		receiptno = rct.receiptno;
 
@@ -27,7 +27,7 @@
 		//this is called if under the partners context
 		if(PARAMS.refno) {
 			def svc = SERVICE.lookup("CloudPaymentService", "epayment");
-			def rct = svc.getReceiptInfo( [refno: PARAMS.refno ] );
+			rct = svc.getReceiptInfo( [refno: PARAMS.refno ] );
 			receiptno = rct.receiptno;
 		}
 	}
@@ -36,6 +36,8 @@
 		throw new Exception("Receiptno is not provided or does not exist");
 
 %>
+
+
 
 <script>
 \$register( {id:'eor51', context: 'eor51', page:"/epayment/receipttemplates/eor51" } );
@@ -55,8 +57,7 @@
 			}
 			else {
 				self.error = null;
-				self.receipt = o.result;
-				console.log( self.receipt );
+				self.receipt = o;
 				handler(self.receipt);
 			}
 		});

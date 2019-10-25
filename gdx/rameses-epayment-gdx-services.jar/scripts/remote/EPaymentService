@@ -11,15 +11,6 @@ class EPaymentService  {
     @Service(value="CloudPaymentService", connection="cloud-epayment")
     def cloudSvc;
 
-    @Service(value="DateService", connection="local-etracs")
-    def dateSvc;
-
-    @Service("NumberService")
-    def numSvc;
-
-    @Service(value="SMSService", connection="email-sms-server")
-    def smsSvc;
-
     @ProxyMethod
     public def createPaymentOrder(def params) {
         if(!params.refno) throw new Exception("Please indicate a billing refno");
@@ -42,12 +33,6 @@ class EPaymentService  {
     }
 
     @ProxyMethod
-    public def cancelPaymentOrder(def params) {
-        localSvc.cancelPaymentOrder( [refno: params.refno ]);
-        return [status: 'OK'];
-    }
-
-    @ProxyMethod
     public def getBilling( def params ) {
         if(!params.refno) throw new Exception("Please indicate a billing refno");
         def bill = localSvc.getBilling(  params );
@@ -57,35 +42,9 @@ class EPaymentService  {
     }
 
     @ProxyMethod
-    public def postPayment( def p ) {
-        def r = localSvc.postPayment( p );
-        if(r !=null ) {
-            cloudSvc.updatePaymentReceipt( r );
-
-            /*
-            println "about to send mobile " + r.mobileno;
-            if(r.mobileno) {
-                try {
-                    def m = [:];
-                    m.phoneno = r.mobileno;
-                    def str = "https://www.filipizen.com/epayment/eor?receiptno="+ r.receiptno;
-                    m.message = "Your receipt has been successfully processed. You can view your e-receipt at " + str;
-                    smsSvc.send( m );                
-                }
-                catch(e) {
-                    //this should not throw an error. 
-                }
-            } 
-            */           
-        }
-        else {
-            return [status: "error"]
-        }
-    }
-
-    @ProxyMethod
     public def getReceipt( def o ) {
-        return localSvc.getReceipt( o );
+        def rct = localSvc.getReceipt( o );
+        return rct;
     }
 
 }

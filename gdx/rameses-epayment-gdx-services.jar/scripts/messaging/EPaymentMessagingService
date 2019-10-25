@@ -1,0 +1,45 @@
+import com.rameses.annotations.*
+import com.rameses.util.*
+import com.rameses.common.*
+import com.rameses.services.extended.*
+
+class EPaymentMessagingService  {
+
+	@Service(value="OnlinePaymentService", connection="local-epayment")
+    def localSvc;
+
+	@Service(value="CloudPaymentService", connection="cloud-epayment")
+    def cloudSvc;
+
+    @OnMessage(value="gdx-mq-client", eval="#{data.action == 'epayment:post-payment'}")
+    public def onReceivePayment(def p) {
+        def r = localSvc.postPayment( p );
+        if(r !=null ) {
+            cloudSvc.updatePaymentReceipt( r );
+            //println "about to send mobile " + r.mobileno;
+            //if(r.mobileno) {
+                //try {
+                    //def m = [:];
+                    //m.phoneno = r.mobileno;
+                    //def str = "https://www.filipizen.com/epayment/eor?receiptno="+ r.receiptno;
+                    //m.message = "Your receipt has been successfully processed. You can view your e-receipt at " + str;
+                    //smsSvc.send( m );                
+                //}
+                //catch(e) {
+                    ////this should not throw an error. 
+                //}
+            //} 
+        }
+        else {
+            //this should be fire and forget...
+            return [status: "error"]
+        }
+    }
+
+    @OnMessage(value="gdx-mq-client", eval="#{data.action == 'epayment:cancel-payment-order'}")
+    public def onCancelPayment(def p) {
+        localSvc.cancelPaymentOrder( [refno: p.refno ]);
+    }
+
+}
+

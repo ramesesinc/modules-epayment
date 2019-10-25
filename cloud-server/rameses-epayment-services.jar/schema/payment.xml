@@ -1,6 +1,7 @@
 <schema adapter="epaymentdb">
 	<element tablename="payment">
 		<field name="objid" primary="true" prefix="EORPMT"/> 
+		<field name="orgcode" required="true"/> 		
 		<field name="paymentrefid" required="true"/> 
 		<field name="txndate" required="true" type="timestamp"/> 
 		<field name="traceid" required="true"/> 
@@ -12,10 +13,6 @@
 		<field name="paypartnerid" /> 
 		<complex name="partner" ref="payment_partner" jointype="many-to-one" required="true">
 			<key field="paypartnerid" target="objid"/> 
-		</complex> 
-
-		<complex name="paymentorder" ref="paymentorder" jointype="many-to-one" required="false" includefields="orgcode">
-			<key field="paymentrefid" target="objid"/> 
 		</complex> 
 	</element> 
 </schema>

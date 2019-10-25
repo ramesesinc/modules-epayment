@@ -1,0 +1,13 @@
+<workunit>
+    <invokers>
+        <invoker folderid="menucategory/treasury/epayment" 
+            caption="View Unposted Online Payments" 
+            role="MASTER" action="init"/>
+        <invoker type="formActions" caption="Resolve" action="resolve" visibleWhen="#{mode=='init'}"/>
+    </invokers>
+    <code class="com.rameses.gov.epayment.models.EORUnpostedPaymentListModel" />
+    <pages>
+        <page name="default" template="com.rameses.gov.epayment.views.EORUnpostedPaymentListPage" />
+        <page name="processing" template="com.rameses.gov.epayment.views.ProcessingPage" />
+    </pages>
+</workunit>
