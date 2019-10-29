@@ -1,9 +1,0 @@
-@media print {
-         .navbar-inverse{display:none}
-         .footer{display:none}
-         .btn-eor{display:none}
-         .box-eor {padding: 0px;}
-         .receiptinfo{float:left;}
-         #Header, #Footer { display: none ! important; }
-         @page {size: auto;margin: 0mm;}
-      }
