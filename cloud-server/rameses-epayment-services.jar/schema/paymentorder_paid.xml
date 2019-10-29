@@ -1,4 +1,4 @@
-<schema adapter="epaymentdb">
+<schema>
 	<element tablename="paymentorder_paid">
 		<field name="objid" primary="true"/> 
 		<field name="txndate" type="timestamp" required="true"/> 

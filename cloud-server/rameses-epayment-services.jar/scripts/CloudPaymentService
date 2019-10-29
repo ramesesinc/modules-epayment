@@ -42,6 +42,7 @@ class CloudPaymentService {
 
 	@ProxyMethod 
 	public def cancelPaymentOrder( params ) {
+		po_db.movePaymentOrderToCancelled( [paymentrefid: params.refno ] );
 		po_db.find( [objid: params.refno ] ).delete();
 		params.action = "epayment:cancel-payment-order";
 		gdx.send( params, params.orgcode );

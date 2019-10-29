@@ -1,4 +1,4 @@
-<schema adapter="epaymentdb">
+<schema>
 	<element tablename="payment">
 		<field name="objid" primary="true" prefix="EORPMT"/> 
 		<field name="orgcode" required="true"/> 		

@@ -1,4 +1,4 @@
-<schema adapter="epaymentdb">
+<schema>
 	<element tablename="payment_partner">
 		<field name="objid" primary="true"/>
 		<field name="state" required="true"/>

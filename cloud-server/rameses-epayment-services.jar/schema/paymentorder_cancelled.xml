@@ -1,5 +1,5 @@
 <schema>
-	<element tablename="paymentorder">
+	<element tablename="paymentorder_cancelled">
 		<field name="objid" primary="true"/> 
 		<field name="txndate" type="timestamp" required="true"/> 
 		<field name="txntype" required="true"/> 

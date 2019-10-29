@@ -2,7 +2,7 @@
 <!-- Created with iReport - A designer for JasperReports -->
 <!DOCTYPE jasperReport PUBLIC "//JasperReports//DTD Report Design//EN" "http://jasperreports.sourceforge.net/dtds/jasperreport.dtd">
 <jasperReport
-		 name="classic"
+		 name="eor"
 
 		 language="groovy"		 columnCount="1"
 		 printOrder="Vertical"
@@ -28,18 +28,16 @@
 		<defaultValueExpression ><![CDATA[".\\"]]></defaultValueExpression>
 	</parameter>
 
-	<field name="eorno" class="java.lang.String"/>
+	<field name="receiptno" class="java.lang.String"/>
 	<field name="paidby" class="java.lang.String"/>
-	<field name="address" class="java.lang.String"/>
+	<field name="paidbyaddress" class="java.lang.String"/>
 	<field name="particulars" class="java.lang.String"/>
-	<field name="account" class="java.lang.String"/>
-	<field name="amount" class="java.lang.String"/>
-	<field name="totalamount" class="java.lang.String"/>
+	<field name="amount" class="java.lang.Number"/>
 	<field name="amountinwords" class="java.lang.String"/>
-	<field name="bank" class="java.lang.String"/>
-	<field name="txnno" class="java.lang.String"/>
-	<field name="txndate" class="java.lang.String"/>
-	<field name="items" class="java.lang.String"/>
+	<field name="partner.name" class="java.lang.String"/>
+	<field name="traceid" class="java.lang.String"/>
+	<field name="tracedate" class="java.util.Date"/>
+	<field name="items" class="java.lang.Object"/>
 
 		<background>
 			<band height="0"  isSplitAllowed="true" >
@@ -71,7 +69,7 @@
 					<textElement verticalAlignment="Middle">
 						<font fontName="Arial" size="20"/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["EOR NO"]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$F{receiptno}]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement
@@ -125,19 +123,6 @@
 					</textElement>
 				<text><![CDATA[PAYMENT DETAILS :]]></text>
 				</staticText>
-				<image  scaleImage="RetainShape" hAlign="Center" onErrorType="Blank" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						x="301"
-						y="3"
-						width="113"
-						height="118"
-						key="image-1"/>
-					<box></box>
-					<graphicElement stretchType="NoStretch">
-					<pen lineWidth="0.0" lineStyle="Solid"/>
-</graphicElement>
-					<imageExpression class="java.lang.String"><![CDATA[]]></imageExpression>
-				</image>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						x="64"
@@ -149,7 +134,7 @@
 					<textElement verticalAlignment="Middle">
 						<font fontName="Arial" size="11"/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["Paid By"]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$F{paidby}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -162,7 +147,7 @@
 					<textElement verticalAlignment="Middle">
 						<font fontName="Arial" size="11"/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["Address"]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$F{paidbyaddress}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -175,17 +160,17 @@
 					<textElement verticalAlignment="Middle">
 						<font fontName="Arial" size="11"/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["Particulars"]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$F{particulars}]]></textFieldExpression>
 				</textField>
 				<subreport  isUsingCache="true">
 					<reportElement
 						x="12"
-						y="203"
+						y="193"
 						width="519"
-						height="14"
+						height="24"
 						key="subreport-1"/>
 					<dataSourceExpression><![CDATA[$F{items}]]></dataSourceExpression>
-					<subreportExpression  class="java.lang.String"><![CDATA["EOR_subreport.jasper"]]></subreportExpression>
+					<subreportExpression  class="java.lang.String"><![CDATA["eor_item.jasper"]]></subreportExpression>
 				</subreport>
 			</band>
 		</title>
@@ -215,7 +200,7 @@
 					<reportElement
 						x="12"
 						y="98"
-						width="35"
+						width="62"
 						height="19"
 						key="staticText-10"/>
 					<box></box>
@@ -228,7 +213,7 @@
 					<reportElement
 						x="12"
 						y="117"
-						width="45"
+						width="62"
 						height="19"
 						key="staticText-11"/>
 					<box></box>
@@ -241,7 +226,7 @@
 					<reportElement
 						x="12"
 						y="136"
-						width="52"
+						width="62"
 						height="19"
 						key="staticText-12"/>
 					<box></box>
@@ -252,9 +237,9 @@
 				</staticText>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						x="47"
+						x="74"
 						y="98"
-						width="453"
+						width="426"
 						height="19"
 						key="textField"/>
 					<box></box>
@@ -265,9 +250,9 @@
 				</textField>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						x="57"
+						x="74"
 						y="117"
-						width="443"
+						width="426"
 						height="19"
 						key="textField"/>
 					<box></box>
@@ -278,9 +263,9 @@
 				</textField>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						x="64"
+						x="74"
 						y="136"
-						width="219"
+						width="209"
 						height="19"
 						key="textField"/>
 					<box></box>
@@ -293,7 +278,7 @@
 					<reportElement
 						x="12"
 						y="8"
-						width="69"
+						width="94"
 						height="20"
 						key="staticText-13"/>
 					<box></box>
@@ -315,18 +300,18 @@
 					</textElement>
 				<text><![CDATA[Amount in words :]]></text>
 				</staticText>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<textField isStretchWithOverflow="false" pattern="#,##0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						x="81"
+						x="106"
 						y="8"
-						width="264"
+						width="239"
 						height="20"
 						key="textField"/>
 					<box></box>
 					<textElement verticalAlignment="Middle">
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["Total Amount"]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.Number"><![CDATA[$F{amount}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -339,7 +324,7 @@
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["Amount in words"]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$F{amountinwords}]]></textFieldExpression>
 				</textField>
 			</band>
 		</summary>

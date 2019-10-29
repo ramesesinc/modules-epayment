@@ -2,7 +2,7 @@
 <!-- Created with iReport - A designer for JasperReports -->
 <!DOCTYPE jasperReport PUBLIC "//JasperReports//DTD Report Design//EN" "http://jasperreports.sourceforge.net/dtds/jasperreport.dtd">
 <jasperReport
-		 name="classic"
+		 name="eor_item"
 
 		 language="groovy"		 columnCount="1"
 		 printOrder="Vertical"
@@ -25,8 +25,8 @@
 	<import value="net.sf.jasperreports.engine.data.*" />
 
 
-	<field name="paymentdetails.account" class="java.lang.String"/>
-	<field name="paymentdetails.amount" class="java.lang.String"/>
+	<field name="item.title" class="java.lang.String"/>
+	<field name="amount" class="java.lang.Number"/>
 
 		<background>
 			<band height="0"  isSplitAllowed="true" >
@@ -83,9 +83,9 @@
 					<textElement verticalAlignment="Bottom">
 						<font fontName="Arial" size="11"/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["Account"]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$F{item.title}]]></textFieldExpression>
 				</textField>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<textField isStretchWithOverflow="false" pattern="#,##0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						x="416"
 						y="0"
@@ -96,7 +96,7 @@
 					<textElement textAlignment="Center" verticalAlignment="Bottom">
 						<font fontName="Arial" size="11"/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["Amount"]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.Number"><![CDATA[$F{amount}]]></textFieldExpression>
 				</textField>
 			</band>
 		</detail>
