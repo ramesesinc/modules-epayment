@@ -16,19 +16,6 @@ class EPaymentMessagingService  {
         def r = localSvc.postPayment( p );
         if(r !=null ) {
             cloudSvc.updatePaymentReceipt( r );
-            //println "about to send mobile " + r.mobileno;
-            //if(r.mobileno) {
-                //try {
-                    //def m = [:];
-                    //m.phoneno = r.mobileno;
-                    //def str = "https://www.filipizen.com/epayment/eor?receiptno="+ r.receiptno;
-                    //m.message = "Your receipt has been successfully processed. You can view your e-receipt at " + str;
-                    //smsSvc.send( m );                
-                //}
-                //catch(e) {
-                    ////this should not throw an error. 
-                //}
-            //} 
         }
         else {
             //this should be fire and forget...

@@ -39,7 +39,7 @@ class EPaymentResolverService {
         }
         else {
             def r = localSvc.postPayment( p );
-            cloudSvc.updatePaymentReceipt( r );
+            if ( r ) cloudSvc.updatePaymentReceipt( r );
         }
     } 
  

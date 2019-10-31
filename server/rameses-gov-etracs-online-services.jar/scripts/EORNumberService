@@ -22,7 +22,7 @@ class EORNumberService {
         def org = orgSvc.getRoot(); 
         def orgid = (org?.objid ? org.objid : '');
 
-        def part = partnerEm.find([ code: partnerid ]).first(); 
+        def part = partnerEm.find([ objid: partnerid ]).first(); 
         if ( !part ) throw new Exception('Partner code '+ partnerid +' does not exist');
         if ( !part.indexno ) throw new Exception('Partner code '+ partnerid +' must have an index number');
 
