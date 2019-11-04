@@ -15,7 +15,7 @@ class EPaymentResolverService {
     def eor_db;
 
 
-    @Service(value="CloudPaymentService", connection="cloud-epayment-server")
+    @Service(value="epayment/CloudPaymentService", connection="cloud-server")
     def cloudSvc;
 
     @Service(value="OrgService", connection="local-admin-server")
@@ -31,10 +31,8 @@ class EPaymentResolverService {
     public void resolve( p ) {  
         // check first if the payment order is still in unpaid mode.
         // if it is already paid then we only need to update the EOR in the cloud
-        def exists = po_db.find( [objid: p.paymentrefid ] ).first();
-        if(!exists) {
-            def r = eor_db.find([paymentrefid: p.paymentrefid]).first();
-            if(!r) throw new Exception("Payment " + p.paymentrefid + " does not exist ");
+        def exists = eor_db.find([ paymentrefid: p.paymentrefid ]).first();
+        if ( exists ) {
             cloudSvc.updatePaymentReceipt( r );
         }
         else {
