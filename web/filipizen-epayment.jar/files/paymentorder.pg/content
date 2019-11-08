@@ -2,9 +2,9 @@
   def svc = SERVICE.lookup("CloudPaymentService", "epayment"); 
   def po = svc.getPaymentOrder( [refno: PARAMS.refno ] );
   if(!po) throw new Exception("Payment order not found"); 
-  def payOptions = svc.getPaymentPartnerOptions( [partnerid: po.orgcode ] );
-  def partnerSvc = SERVICE.lookup("CloudPartnerService", "partner")
-  def partner = partnerSvc.findById( [ id: po.orgcode] );
+  def payOptions = svc.getPaymentPartnerOptions( [partnerid: po.orgcode ] ); 
+  def partnerSvc = SERVICE.lookup("CloudPartnerService", "partner") 
+  def partner = partnerSvc.findById( [ id: po.orgcode] ); 
 %>
 <style>
   .caption-class {width:150px;}
@@ -54,7 +54,7 @@
   }
 </script>
 
-  <div style="padding-top:20px" r:context="paymodel" r:visibleWhen="#{err != null }" style="display:none;">
+  <div style="padding-top:20px" r:context="paymodel" r:visibleWhen="#{err != null }" style="display:none !important;">
     <label r:context="paymodel" style="color:red">#{err}</label>
   </div>
 

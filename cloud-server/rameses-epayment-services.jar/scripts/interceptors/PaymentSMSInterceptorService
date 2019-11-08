@@ -2,39 +2,28 @@ import com.rameses.annotations.*;
 
 class PaymentSMSInterceptorService {
 
-	//transferred temporarily to the gdx EPaymentService
-	@Service(value="SMSService", connection="email-sms-server")
+	@Service("SMSService")
 	def smsSvc;
 
 	@DataContext('paymentorder_paid')
 	def po_db;
 
 	@After(pattern="CloudPaymentService.updatePaymentReceipt")
-	public void smsAfterReceiptConfirmed( def evt ) {
-		def pmt = evt.args[0];
-		def v = po_db.find( [objid: pmt.paymentrefid ] ).select("email,mobileno").first();
-		if(v.mobileno) {
-			 try {
+	public void smsAfterReceiptConfirmed( evt ) {
+		try {
+			def pmt = evt.args[0];
+			def v = po_db.find([ objid: pmt.paymentrefid ]).select("mobileno").first(); 
+			if ( v.mobileno ) { 
                 def m = [:];
                 m.phoneno = v.mobileno;
+
                 def str = "https://www.filipizen.com/epayment/eor?receiptno="+ pmt.receiptno;
                 m.message = "Your receipt has been successfully processed. You can view your e-receipt at " + str;
                 smsSvc.send( m );                
             }
-            catch(e) {
-                //this should not throw an error. 
-            }
-		}
-
-		/*
-		def v = po_db.find( [paymentrefid: pmt.paymentrefid ] ).select("email,mobileno").first();
-		if(v.mobileno) {
-			def m = [:];
-			m.phoneno = v.mobileno;
-			m.message = "Your receipt has been processed. Your receipt no is " + v.payment?.receiptno;	
-			smsApi.send( m );
-		}
-		*/
+        }
+        catch(Throwable t) {
+        	t.printStackTrace(); 
+        } 
 	}
-
 }

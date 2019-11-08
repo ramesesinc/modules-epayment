@@ -8,25 +8,18 @@ class EPaymentMessagingService  {
 	@Service(value="OnlinePaymentService", connection="local-epayment")
     def localSvc;
 
-	@Service(value="CloudPaymentService", connection="cloud-epayment")
+	@Service(value="epayment/CloudPaymentService", connection="cloud-server")
     def cloudSvc;
 
     @OnMessage(value="gdx-mq-client", eval="#{data.action == 'epayment:post-payment'}")
-    public def onReceivePayment(def p) {
+    public void onReceivePayment( p ) {
         def r = localSvc.postPayment( p );
-        if(r !=null ) {
-            cloudSvc.updatePaymentReceipt( r );
-        }
-        else {
-            //this should be fire and forget...
-            return [status: "error"]
-        }
-    }
+        if ( r ) cloudSvc.updatePaymentReceipt( r );
+    } 
 
     @OnMessage(value="gdx-mq-client", eval="#{data.action == 'epayment:cancel-payment-order'}")
-    public def onCancelPayment(def p) {
+    public void onCancelPayment( p ) {
         localSvc.cancelPaymentOrder( [refno: p.refno ]);
     }
-
 }
 

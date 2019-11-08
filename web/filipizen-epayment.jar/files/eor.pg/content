@@ -1,41 +1,37 @@
 <%
-	if(!PARAMS.receiptno && !PARAMS.refno )
-		throw new Exception("Please provide a receiptno or refno parameter");
+def res = [:]; 
+try {
+	def p = [:];
+	p.refno = PARAMS.refno;
+ 	p.receiptno = PARAMS.receiptno;
 
-	def receiptno = PARAMS.receiptno;
-	def agency = PARAMS.info;
-		
+	def svc = SERVICE.lookup("CloudPaymentService", "epayment");
+	def rct = svc.getReceiptInfo( p );
+	res.partnerid = rct.partnerid;
+	res.receiptno = rct.receiptno;
 
-	//this should be applicable both with partner or without partner
-	def partnerid = PARAMS.info?.id;
-
-	if(partnerid == null) {
-		//this is called from the global context
-		def svc = SERVICE.lookup("CloudPaymentService", "epayment");
-		def p =[:];
-		if(PARAMS.receiptno) p.receiptno = PARAMS.receiptno;
-		else if(PARAMS.refno) p.refno = PARAMS.refno;
-
-		def rct = svc.getReceiptInfo( p );
-		partnerid = rct.partnerid;
-		receiptno = rct.receiptno;
-
-		def partnerSvc = SERVICE.lookup("CloudPartnerService", "partner");
-    	agency = partnerSvc.findById( [id: partnerid] ); 
-	}
-	else {
-		//this is called if under the partners context
-		if(PARAMS.refno) {
-			def svc = SERVICE.lookup("CloudPaymentService", "epayment");
-			def rct = svc.getReceiptInfo( [refno: PARAMS.refno ] );
-			receiptno = rct.receiptno;
+	def partnerSvc = SERVICE.lookup("CloudPartnerService", "partner");
+	res.agency = partnerSvc.findById([ id: res.partnerid ]); 
+} 
+catch(Throwable t) {
+	def cause = t; 
+	while ( cause != null ) {
+		if ( cause.message ) {
+			break;  
+		} else {
+			cause = cause.cause; 	
 		}
 	}
-
-	if(!receiptno) 
-		throw new Exception("Receiptno is not provided or does not exist");
-
+	res.errmsg = (cause ? cause.message : t.message); 
+}
 %>
+
+<% if ( res.errmsg ) { %>
+	
+<pre>${res.errmsg}</pre>
+
+<% } else { %>
+
 
 <script>
 \$register( {id:'eor51', context: 'eor51', page:"/epayment/receipttemplates/eor51" } );
@@ -45,18 +41,17 @@
 	var self = this;
 	this.error;
 	this.receipt;
-	this.agency = { title: '${agency.title}', group: {title:'${agency.group.title}' } };
+	this.agency = { title: '${res.agency?.title}', group: {title:'${res.agency?.group?.title}' } };
 
 	this.loadReceipt = function( handler ) {
-		var svc = Service.lookup("${partnerid}:EPaymentService");
-		svc.getReceipt( {receiptno: "${receiptno}"}, function(o,s) {
-			if( s=="error") {
+		var svc = Service.lookup("${res.partnerid}:EPaymentService");
+		svc.getReceipt( {receiptno: "${res.receiptno}"}, function(s,o) {
+			if( s.status =="ERROR") {
 				self.error = "Receipt does not exist";
 			}
 			else {
 				self.error = null;
-				self.receipt = o.result;
-				console.log( self.receipt );
+				self.receipt = o;
 				handler(self.receipt);
 			}
 		});
@@ -77,3 +72,5 @@
 </div>
 
 <div id="content"></div>
+
+<% } %> 

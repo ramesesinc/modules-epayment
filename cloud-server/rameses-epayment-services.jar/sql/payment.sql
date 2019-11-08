@@ -1,10 +1,12 @@
 [getUnpostedPaymentList]
-SELECT p.*,
-po.txntype, po.txntypename,
-po.paidby, po.particulars, po.refno, po.origin,
-po.mobileno, po.email, po.phoneno,
-pp.code AS partnercode, pp.objid AS partnerid
-FROM payment p 
-INNER JOIN paymentorder po ON p.paymentrefid = po.objid
-INNER JOIN payment_partner pp ON p.paypartnerid = pp.objid 
-WHERE p.receiptid IS NULL AND p.orgcode = $P{orgcode}
+select p.*,
+	po.txntype, po.txntypename,
+	po.paidby, po.particulars, po.refno, po.origin,
+	po.mobileno, po.email, po.phoneno,
+	pp.code as partnercode, pp.objid as partnerid
+from payment p 
+	inner join paymentorder_paid po ON po.objid = p.paymentrefid 
+	inner join payment_partner pp ON pp.objid = p.paypartnerid 
+where p.receiptid is null 
+	and p.orgcode = $P{orgcode}
+order by p.txndate 

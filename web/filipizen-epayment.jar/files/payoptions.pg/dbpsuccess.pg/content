@@ -1,9 +1,12 @@
 <%
-	//we must check here that the transaction key being passed around matches
 	def svc = SERVICE.lookup("CloudPaymentService", "epayment");
-	PARAMS.paypartnerid = 'DBP';
 
-	def pmt = svc.postPayment( PARAMS );
+	def m = [:]; 
+	m.putAll( PARAMS );  
+	m.paypartnerid = 'DBP'; 
+	m.paymentrefid = m.referenceCode; 
+
+	def pmt = svc.postPayment( m );
 	pmt.orgcode = pmt.info.orgcode;
 	pmt.particulars = pmt.info.particulars;
 	pmt.paypartnercode = pmt.paypartnerid;
@@ -16,9 +19,5 @@
 </form>
 
 <script> 
-\$put("success", new function() {
-   this.onload = function() {
-      \$('#postform').submit();     
-   }
-});
+\$('#postform').submit(); 
 </script>

@@ -2,10 +2,13 @@ import com.rameses.annotations.*;
 
 class DbpPaymentPartnerOptionInterceptor {
 	
+	@Service("DateService")
+	def dateSvc;
+
 	def formatter = new java.text.DecimalFormat('0.00');
 
 	@After(pattern="CloudPaymentService.getPaymentPartnerOption", eval="#{result.paypartnerid.toLowerCase() == 'dbp' }")
-	public void getDbpPayOptions(evt) {
+	public void buildPaymentPartnerOption(evt) {
 		def po = evt.args[0].paymentorder;
 		def partner = evt.result.paypartner;
 		def params = [:];
@@ -21,7 +24,7 @@ class DbpPaymentPartnerOptionInterceptor {
 	}
 
 	@After( pattern="CloudPaymentService.getPostPaymentParams", eval="#{args[0]?.paypartnerid.toString().toLowerCase() == 'dbp'}") 
-	public void getDbpPostPaymentParameters( evt ) {
+	public void buildPostPaymentParams( evt ) {
 		def params = evt.args[0]; 
 		def pmt = evt.result;
 
@@ -30,10 +33,7 @@ class DbpPaymentPartnerOptionInterceptor {
 		pmt.amount = params.amount;
 		pmt.paymentrefid = params.referenceCode;
 		pmt.traceid = params.retrievalReferenceCode;
-		if( params.date ) {
-			def sdt = new java.text.SimpleDateFormat("EEE MMM dd HH:mm:ss Z yyyy");
-			pmt.tracedate = sdt.parse( params.date );
-		}
+		pmt.tracedate = dateSvc.getServerDate();
 
 		def partner = pmt.paypartner;
 
@@ -45,8 +45,5 @@ class DbpPaymentPartnerOptionInterceptor {
 		if(!responseToken.equals(params.securityToken)) {
 			throw new Exception("Security token mismatch. This is not a valid payment from DBP");
 		}
-		
 	} 	
-
-
 }

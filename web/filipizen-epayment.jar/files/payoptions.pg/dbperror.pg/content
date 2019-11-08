@@ -1,7 +1,7 @@
 <%
 	//get the partner so we can go back to the payment order page
 	def svc = SERVICE.lookup( "CloudPaymentService", "epayment" );
-	def po = svc.getPaymentOrder( [refno: PARAMS.referenceCode ] );
+	def po = svc.getPaymentOrder([ refno: PARAMS.referenceCode ]);
 	def partnerSvc = SERVICE.lookup( "CloudPartnerService", "partner" );
 	def agency = partnerSvc.findById([ id: po.orgcode ]);
 
@@ -17,17 +17,12 @@
 	}	
 %>
 
-<script> 
-\$put("error", new function() {
-   this.onload = function() {
-      \$('#postform').submit();     
-   }
-});
-</script>
-
 <form id="postform" method="POST" action="/epayment/payerror">
 <%params.each{ k,v-> %>
 <input type="hidden" name="${k}" value="${v}"/>
 <%}%>
 </form>
 
+<script> 
+\$('#postform').submit();     
+</script>
