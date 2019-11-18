@@ -8,7 +8,7 @@ class EPaymentService  {
     @Service(value="OnlinePaymentService", connection="local-epayment")
     def localSvc;
 
-    @Service(value="CloudPaymentService", connection="cloud-epayment")
+    @Service(value="epayment/CloudPaymentService", connection="cloud-server")
     def cloudSvc;
 
     @ProxyMethod
