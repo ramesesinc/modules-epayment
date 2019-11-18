@@ -21,23 +21,19 @@ p.serviceFeeLabel =  "Service Fee"
 p.serviceType = PARAMS.serviceType
 p.total = PARAMS.total;
 
-def svc = SERVICE.lookup("CloudPaymentService", "epayment");
-def partner = svc.getPaymentPartner([objid: 'DBP'])
+def svc = SERVICE.lookup('PersistenceService', 'epayment'); 
+def po = svc.read([ _schemaname:'paymentorder', objid: PARAMS.referenceCode ]); 
+def partner = svc.read([ _schemaname:'payment_partner_option', objid: po.orgcode.toString() +'_DBP' ]); 
 
 def secval = partner.info?.terminalid + p.referenceCode + '{' + partner.info?.transactionkey + '}'; 
 def requestToken = com.rameses.util.Encoder.SHA1.encode(secval);
 p.securityToken = com.rameses.util.Encoder.SHA1.encode(requestToken + '{' + partner.info?.transactionkey + '}'); 
 %>
 
-<script> 
-\$put("success", new function() {
-   this.onload = function() {
-      \$('#postform').submit();     
-   }
-});
-</script>
-
 <form id="postform" method="POST" action="/payoptions/dbpsuccess">
 	<%p.each {k,v-> %><input type="hidden" name="${k}" value="${v}"/><%}%>
 </form>
 
+<script> 
+\$('#postform').submit();     
+</script>
