@@ -8,10 +8,26 @@ class PaymentSMSInterceptorService {
 	@DataContext('paymentorder_paid')
 	def po_db;
 
+	@Service 
+	def self; 
+
 	@After(pattern="CloudPaymentService.updatePaymentReceipt")
-	public void smsAfterReceiptConfirmed( evt ) {
+	public void smsAfterReceiptConfirmed( evt ) { 
 		try {
-			def pmt = evt.args[0];
+			def pmt = evt.args[0]; 
+			self.sendSMS( pmt ); 
+		} 
+		catch(Throwable t) {
+			t.printStackTrace(); 
+		}
+	}
+
+
+	@Async
+	@ProxyMethod 
+	public void sendSMS( pmt ) {
+		try {
+			
 			def v = po_db.find([ objid: pmt.paymentrefid ]).select("mobileno").first(); 
 			if ( v.mobileno ) { 
                 def m = [:];
