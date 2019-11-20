@@ -9,7 +9,7 @@ class EPaymentResolverService {
     def po_db;
 
     @DataContext("eor_paymentorder_paid")
-    def poPaid_db;
+    def po_paid_db;
 
     @DataContext("eor")
     def eor_db;
@@ -31,14 +31,18 @@ class EPaymentResolverService {
     public void resolve( p ) {  
         // check first if the payment order is still in unpaid mode.
         // if it is already paid then we only need to update the EOR in the cloud
-        def exists = eor_db.find([ paymentrefid: p.paymentrefid ]).first();
-        if ( exists ) {
-            cloudSvc.updatePaymentReceipt( r );
-        }
+        def eorinfo = eor_db.find([ paymentrefid: p.paymentrefid ]).first(); 
+        if ( eorinfo?.objid ) {
+            def m = [:]; 
+            m.receiptid = eorinfo.objid; 
+            m.receiptno = eorinfo.receiptno; 
+            m.receiptdate = eorinfo.receiptdate; 
+            m.paymentrefid = eorinfo.paymentrefid;
+            cloudSvc.updatePaymentReceipt( m ); 
+        } 
         else {
-            def r = localSvc.postPayment( p );
+            def r = localSvc.postPayment( p ); 
             if ( r ) cloudSvc.updatePaymentReceipt( r );
-        }
-    } 
- 
+        } 
+    }  
 }

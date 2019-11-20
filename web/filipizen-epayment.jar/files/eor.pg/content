@@ -12,6 +12,8 @@ try {
 
 	def partnerSvc = SERVICE.lookup("CloudPartnerService", "partner");
 	res.agency = partnerSvc.findById([ id: res.partnerid ]); 
+	if ( res.agency ) res.agency.remove('logo'); 
+
 } 
 catch(Throwable t) {
 	def cause = t; 
@@ -59,7 +61,9 @@ catch(Throwable t) {
 
 	this.onload = function() {
 		this.loadReceipt( function(rct) {
-			if(!rct.formno) rct.formno = '51';
+			if ( rct.formno == null || rct.formno=='' ) rct.formno = '51';
+			else if ( (typeof rct.formno) != 'string' ) rct.formno = '51'; 
+			
 			window.location.hash = "eor"+rct.formno;
 		});
 	};

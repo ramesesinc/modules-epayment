@@ -37,7 +37,7 @@
     
             <ul id="toolbar-user">
               <!--<li><a href="/register">Sign up</a></li>-->
-              <li><a href="/userpanel" title="Log in">Log in</a></li>
+              <!--li><a href="/userpanel" title="Log in">Log in</a></li-->
             </ul>
           
         </div>
@@ -49,10 +49,13 @@
   ${_content}
 </div>
 
+<%
+def stryear = new java.sql.Date( System.currentTimeMillis()).toString().split('-')[0]; 
+%>
 <div class="footer">
   <footer class="container">
     <ul class="links footer-links">
-      <li><a href="#">&copy; 2004 &ndash; 2018 </a></li>
+      <li><a href="#">&copy; ${stryear} </a></li>
       <li><a href="#">Sitemap</a> | </li>
       <li><a href="#">Privacy</a> | </li>
       <li><a href="#">Legal</a> | </li>

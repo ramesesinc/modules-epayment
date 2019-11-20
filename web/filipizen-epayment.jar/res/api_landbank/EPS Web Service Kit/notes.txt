@@ -1,6 +1,0 @@
-ERROR: 
-
-405 - HTTP verb used to access this page is not allowed.
-The page you are looking for cannot be displayed because an invalid method (HTTP verb) was used to attempt access.
-
-http://58.71.22.7/testegps/rs/epayment/processpayment?MessageType=02&TransactionType=01&PaymentMode=03&CurrencyCode=000&Username=0002&Password=yCk9iB4&ProductID=0000&ReferenceNum=399285771714730&TransactionNum=056610565104102&MessageDate=20140414&MessageTime=143904&PaymentTime=20140414&PaymentAmt=120&PaymentDetail=ePayment transaction&PayeeCode=0005&Payee Name=TestPayee&PayerCode=9988&PayerName=TestCompany&CrAcctNum=1234567890&DrAcctNum=1234567890&BankCodeTo=069041&BankCodeFrom=069040&OtherDetails1=Other Details&OtherDetails2=Other Details&OtherDetails3=OtherDetails&OtherDetails4=Other Details&OtherDetails5=OtherDetails&Signature=10a3Mli8mmUxXjl+u3+0oXeFwXhgL620xc3968Dipf

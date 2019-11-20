@@ -1,9 +1,0 @@
-Card No    : 4706764060099512
-CVV2       : 631
-Expiry Date: 07/2020
-
-
-Card No    : 4111111111111111
-CVV2       : 250
-Expiry Date: 03/2023
-
