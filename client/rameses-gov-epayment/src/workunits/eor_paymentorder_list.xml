@@ -1,10 +1,14 @@
-<workunit extends="com/rameses/seti2/templates/CrudList.xml" 
-         schemaName="eor_paymentorder" allowCreate="false" allowOpen="false" allowDelete="false">
+<workunit extends="com/rameses/seti2/templates/CrudNodeList.xml" 
+          schemaName="eor_paymentorder" 
+          allowCreate="false" allowOpen="false" allowDelete="false">
+
     <invokers>
         <invoker folderid="menucategory/treasury/epayment" 
                  caption="View Payment Orders" 
                  role="MASTER" action="init"
-                 cols="objid,txndate,txntypename,payer.name,amount,expirydate,refno,controlno"
-                 orderBy="txndate"/>
+                 cols="objid,txndate,txntypename,payer.name,amount,expirydate,refno,controlno" 
+                 hiddenCols="txntype"/>
     </invokers>
+    
+    <code class="com.rameses.gov.epayment.models.EORPaymentOrderListModel" /> 
 </workunit>
