@@ -20,7 +20,7 @@ class LbpPaymentPartnerOptionInterceptor {
 		def params = [:];
 		params.MerchantCode = partner.info?.merchantcode; 
 		params.MerchantRefNo = po.objid; 
-		params.Particulars = "Transaction_type=${po.txntypename};Name of Payor=${po.paidby.replaceAll('&','and')};Tax Reference Number=${po.objid};"; 
+		params.Particulars = "Transaction_type=${po.txntypename};Name of Payor=${po.paidby.replaceAll('&','and')};Tax Reference Number=${po.objid};Remarks=NA"; 
 		params.Amount = samt;
 		params.PayorName = po.paidby;
 		params.PayorEmail = ( po.paidbyemail ? po.paidbyemail : '');
