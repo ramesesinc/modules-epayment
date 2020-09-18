@@ -7,6 +7,13 @@ class DbpPaymentPartnerOptionInterceptor {
 
 	def formatter = new java.text.DecimalFormat('0.00');
 
+	@Before(pattern="CloudPaymentService.postPartnerPayment", eval="#{args[0].statusid == 'dbpsuccess' }")
+	public void beforePostPartnerPayment(evt) { 
+		def m = evt.args[0];
+		m.paypartnerid = 'DBP'; 
+		m.paymentrefid = m.referenceCode; 
+	}
+
 	@After(pattern="CloudPaymentService.getPaymentPartnerOption", eval="#{result.paypartnerid.toLowerCase() == 'dbp' }")
 	public void buildPaymentPartnerOption(evt) {
 		def po = evt.args[0].paymentorder;
