@@ -38,7 +38,7 @@ class CloudPaymentService {
 		//my suggestion is create a table in this domain, not the partner.	
 
 		param.webfee = 0.0; 
-		param.objid = param.paymentrefid;
+		param.objid = param.objid;
 
 		def df = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		param.txndate = df.format(param.txndate);
@@ -48,7 +48,7 @@ class CloudPaymentService {
 
 	@ProxyMethod 
 	public def cancelPaymentOrder( params ) {
-		def po = po_db.find([ objid: params.refno ]).first(); 
+		def po = po_db.find([ objid: params.objid ]).first(); 
 		if ( po?.objid ) {
 			po_cancelled_db.create( po ); 
 			po_db.find([ objid: po.objid ]).delete(); 
@@ -130,7 +130,7 @@ class CloudPaymentService {
 
 	@ProxyMethod
 	public def getPaymentOrder( param ) {
-		def o =  po_db.find( [objid: param.refno ]  ).first();
+		def o =  po_db.find( [objid: param.objid ]  ).first();
 		if( o ) {
 			if(o.webfee==null) o.webfee = 0;
 			o.total = o.amount + o.webfee;
@@ -164,32 +164,4 @@ class CloudPaymentService {
 		return pay_db.getUnpostedPaymentList([orgcode: o.orgcode]);
 	}
 
-	/*************************************************************************************************
-	* This is called when asking to display EOR. This will return the receipt number and orgcode 
-	*************************************************************************************************/
-	@ProxyMethod
-	public def getReceiptInfo( o ) {
-		def findby = null; 
-		def searchkey = null;
-		if ( o.receiptno ) {
-			findby = [receiptno: o.receiptno]; 
-			searchkey = 'receiptno'; 
-		}
-		else if ( o.refno ) {
-			findby = [paymentrefid: o.refno]; 
-			searchkey = 'refno'; 
-		}
-
-		if ( !findby ) 
-			throw new Exception("Please provide receiptno or refno parameter");
-
-		def rct = pay_db.find( findby ).first(); 
-		if ( !rct?.objid ) 
-			throw new Exception("This payment reference does not exist"); 
-
-		if ( !rct?.receiptno )
-			throw new Exception("This transaction does not yet have an associated electronic receipt. If you have a already paid, the OR might still be processed. Please inquire with the agency"); 
-
-		return [ partnerid: rct.orgcode, receiptno: rct.receiptno ];
-	} 
 } 
