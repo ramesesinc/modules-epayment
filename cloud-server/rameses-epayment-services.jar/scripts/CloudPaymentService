@@ -89,7 +89,7 @@ class CloudPaymentService {
 		if (!params.paymentrefid) throw new Exception("paymentrefid is required.");
 
 		def pmt = postPayment(params);
-		def po = po_paid_db.find([paymentrefid: pmt.paymentrefid]).first();
+		def po = po_paid_db.find([objid: pmt.paymentrefid]).first();
 		pmt.orgcode = pmt.info.orgcode;
 		pmt.particulars = pmt.info.particulars;
 		pmt.paypartnercode = pmt.paypartnerid;
