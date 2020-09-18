@@ -125,6 +125,7 @@ class CloudPaymentService {
 		pmt.partner = [objid: pmt.paypartnerid];
 		pmt.txndate = dateSvc.getServerDate();
 		pmt.orgcode = po.orgcode;
+		pmt.paymentrefid = po.objid;
 		if (!po.particulars) {
 			po.particulars = po.txntypename;
 		}
