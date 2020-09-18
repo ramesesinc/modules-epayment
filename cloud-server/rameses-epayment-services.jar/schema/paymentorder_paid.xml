@@ -18,6 +18,7 @@
 		<field name="expirydate"/>  
 		<field name="webfee" required="true" type="decimal"/>  
 		<field name="cachekey"/>  
+		<field name="checkoutid"/>  
 	</element>
 </schema>
 
