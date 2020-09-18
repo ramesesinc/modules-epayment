@@ -5,8 +5,8 @@
 		<field name="txndate" type="timestamp" required="true" caption="Txn Date" indexed="true"/>
 		<field name="txntype" required="true" searchable="true" indexed="true"/>
 		<field name="txntypename" required="true" caption="Txn Type"/>
-		<field name="payer_objid" required="true" />
-		<field name="payer_name" required="true" caption="Payer" searchable="true" indexed="true"/>
+		<field name="payer_objid" />
+		<field name="payer_name"  caption="Payer" searchable="true" indexed="true"/>
 		<field name="paidby" required="true" caption="PaidBy"/>
 		<field name="paidbyaddress" required="true" caption="PaidByAddress"/>
 		<field name="particulars" required="true" />

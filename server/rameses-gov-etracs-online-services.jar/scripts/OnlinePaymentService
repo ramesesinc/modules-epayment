@@ -62,15 +62,10 @@ class OnlinePaymentService   {
 
     //this method will be intercepted by the other modules based on the txntype 
     @ProxyMethod
-    public def createPaymentOrder( def o ) {
+    public def createPaymentOrder( def info ) {
         initEnv();       
 
-        if(!o.txntype) return [status:0, message:'txntype is required'];
-        if( !o.info ) 
-            throw new Exception("info is required in the arguments. Please override @Before OnlinePaymentService.createPaymentOrder and pass info");
-
-        def info = o.info; 
-        info.origin = o.origin;  
+        if(!info.txntype) return [status:0, message:'txntype is required'];
 
         String locid = orgSvc.getRoot().code.replaceAll('-', ''); 
         info.objid =  KeyGen.generateAlphanumKey( locid.padRight( 6, "0" ), 12 );
@@ -83,27 +78,8 @@ class OnlinePaymentService   {
         cal.add( Calendar.HOUR, 24 ); 
         info.expirydate = new java.sql.Timestamp( cal.getTimeInMillis() ); 
         if ( info.txntypename==null ) info.txntypename = info.txntype; 
-
         info.state = 'PENDING';
-        def m = poEm.create( info ); 
-
-        def result = [:];
-        result.status=0;
-        result.objid = m.objid;
-        result.paymentrefid=m.objid;
-        result.amount=m.amount;
-        result.txntype=m.txntype;
-        result.txntypename=m.txntypename;
-        result.txndate=m.txndate;
-        result.controlno=m.controlno;
-        result.paidby=m.paidby;
-        result.particulars=m.particulars;
-        result.expirydate=m.expirydate;
-        result.message=info.message;
-        result.email=info.email;
-        result.mobileno=info.mobileno;
-        result.phoneno=info.phoneno;
-        return result;
+        return poEm.create( info ); 
     }
 
     @ProxyMethod

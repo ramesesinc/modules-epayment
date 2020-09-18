@@ -5,7 +5,7 @@ import com.rameses.services.extended.*
 
 class EPaymentService  {
 
-    @Service(value="OnlinePaymentService", connection="local-epayment")
+    @Service(value="OnlinePaymentService", connection="local-epayment-server")
     def localSvc;
 
     @Service(value="epayment/CloudPaymentService", connection="cloud-server")
@@ -17,10 +17,12 @@ class EPaymentService  {
         if(!params.orgcode) throw new Exception("Please include orgcode"); 
         if(!params.txntype) throw new Exception("Please include txntype"); 
         try {
+
             def po = localSvc.createPaymentOrder( params );
             po.orgcode = params.orgcode;
             po.refno = params.refno;
             po.origin = params.origin;
+
             cloudSvc.createPaymentOrder( po );
 
             //activate the state. activated means it is actually updated in the cloud.
