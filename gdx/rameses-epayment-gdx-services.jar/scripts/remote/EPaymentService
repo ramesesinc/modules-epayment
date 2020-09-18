@@ -16,6 +16,7 @@ class EPaymentService  {
         if(!params.refno) throw new Exception("Please indicate a billing refno");
         if(!params.orgcode) throw new Exception("Please include orgcode"); 
         if(!params.txntype) throw new Exception("Please include txntype"); 
+
         try {
 
             def po = localSvc.createPaymentOrder( params );
@@ -34,20 +35,7 @@ class EPaymentService  {
         }
     }
 
-    @ProxyMethod
-    public def getBilling( def params ) {
-        if(!params.refno) throw new Exception("Please indicate a billing refno");
-        def bill = localSvc.getBilling(  params );
-        if(!bill) throw new Exception("No record found for " + params.refno);
-        if(bill.status == 1 ) throw new Exception( bill.message );
-        return bill;
-    }
-
-    @ProxyMethod
-    public def getReceipt( def o ) {
-        def rct = localSvc.getReceipt( o );
-        return rct;
-    }
+    
 
 }
 

@@ -5,7 +5,7 @@ import com.rameses.services.extended.*
 
 class EPaymentMessagingService  {
 
-	@Service(value="OnlinePaymentService", connection="local-epayment")
+	@Service(value="OnlinePaymentService", connection="local-epayment-server")
     def localSvc;
 
 	@Service(value="epayment/CloudPaymentService", connection="cloud-server")
@@ -13,6 +13,7 @@ class EPaymentMessagingService  {
 
     @OnMessage(value="gdx-mq-client", eval="#{data.action == 'epayment:post-payment'}")
     public void onReceivePayment( p ) {
+        println "posting payment "+p;
         def r = localSvc.postPayment( p );
         if ( r ) cloudSvc.updatePaymentReceipt( r );
     } 
