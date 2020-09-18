@@ -63,6 +63,41 @@ class CloudPaymentService {
 		return [paypartner: o.paypartner];		
 	}
 
+	@ProxyMethod
+	public def getPayPartner(def params)  {
+		def po = getPaymentOrder(params)
+		def p = [paymentorder: po, payoption: params.payoption]
+		def payoption = self.getPaymentPartnerOption(p);
+
+		def formaction = payoption.paypartner?.info?.testactionurl; 
+		if (payoption.paypartner?.checkout) {
+			formaction = payoption.paypartner.checkout.redirectUrl;
+			def tokens = formaction.split("=");
+			payoption.paypartner.id = tokens[1];
+			payoption.paypartner.isredirect = true;
+		} 
+		if ( !formaction ) {
+			formaction = payoption.paypartner.actionurl;
+		}
+		payoption.paypartner.formaction = formaction;
+		return payoption.paypartner;
+	}
+
+	@ProxyMethod
+	public def postPartnerPayment(params) {
+		if (!params.paypartnerid) throw new Exception("paypartnerid is required.");
+		if (!params.paymentrefid) throw new Exception("paymentrefid is required.");
+
+		def pmt = postPayment(params);
+		def po = po_paid_db.find([paymentrefid: pmt.paymentrefid]).first();
+		pmt.orgcode = pmt.info.orgcode;
+		pmt.particulars = pmt.info.particulars;
+		pmt.paypartnercode = pmt.paypartnerid;
+		pmt.paidby = po?.paidby;
+		pmt.email = po?.email;
+		return pmt;
+	}
+
 	@ProxyMethod 
 	public def postPayment( def parms ) {
 		if ( !parms.paypartnerid ) throw new Exception("paypartnerid is required in postPayment"); 
@@ -90,6 +125,9 @@ class CloudPaymentService {
 		pmt.partner = [objid: pmt.paypartnerid];
 		pmt.txndate = dateSvc.getServerDate();
 		pmt.orgcode = po.orgcode;
+		if (!po.particulars) {
+			po.particulars = po.txntypename;
+		}
 
 		//transfer to paymentorder_paid 
 		po_paid_db.create( po );
