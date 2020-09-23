@@ -23,10 +23,14 @@ class EORService {
     @Service("EORNumberService")
     def eorNumSvc;
 
+    @DataContext("eor_paymentorder")
+    def poEm; 
+
+    @DataContext("eor_paymentorder_paid")
+    def po_paid_db; 
+
     @ProxyMethod
     public def post( def po ) {
-
-        def itemAcctUtil = new ItemAccountUtil();
 
         if(!po.items)
             throw new Exception("Please provide items in EORService.post");      
@@ -48,7 +52,7 @@ class EORService {
         entity.payer = po.payer;
         entity.remarks = po.particulars; 
         entity.refid = po.refid;
-        entity.paymentrefid = po.paymentrefid;
+        entity.paymentrefid = po.objid;
         entity.amount = po.amount;
         entity.remarks = po.particulars;
 
@@ -58,12 +62,15 @@ class EORService {
             throw new Exception("entity.paymentrefid is null");
 
         entity.items = po.items; 
-        entity.items.findAll{ !it.item.fund?.objid }.each {
-            def a = itemAcctUtil.lookup( it.item.objid );
-            it.item = a;
-        }
         entity.sharing = po.sharing;
-        return eorEm.create( entity ); 
+        def e = eorEm.create( entity ); 
+
+        //transfer the po after successful create of the eor
+        po_paid_db.create( po ); 
+        poEm.find([ objid: po.objid ]).delete(); 
+
+        e.paymentorder = po;
+        return e;
     }   
 
     

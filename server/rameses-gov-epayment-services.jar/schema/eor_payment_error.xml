@@ -1,4 +1,4 @@
-<schema adapter="eor">
+<schema>
 	<element tablename="eor_payment_error">
 		<field name="objid" primary="true" prefix="ERR"/>
 		<field name="txndate" required="true"/>

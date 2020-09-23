@@ -2,11 +2,11 @@
           allowCreate="false" allowEdit="false" allowDelete="false">
     <invokers>
         <invoker folderid="/explorer/master/epayment" caption="Payment Partner" role="MASTER" 
-                 cols="code,name"
+                 cols="objid,code,name"
                  action="init"/>
         
          <invoker folderid="/menucategory/treasury/epayment" caption="Payment Partner" role="MASTER" 
-                 cols="code,name,branch"
+                 cols="objid,code,name,branch"
                  action="init" index="-5"/>
          
          <invoker type="listActions" caption="Sync from Cloud" action="syncCloud" />

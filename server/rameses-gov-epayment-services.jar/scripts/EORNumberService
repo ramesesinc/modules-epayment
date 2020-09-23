@@ -14,7 +14,7 @@ class EORNumberService {
     @DataContext('eor_number')
     def num_db;
 
-    @Service('OrgService')
+    @Service(value='OrgService', connection="local-admin-server")
     def orgSvc;
 
     @ProxyMethod(local=true)

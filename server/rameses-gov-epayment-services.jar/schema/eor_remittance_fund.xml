@@ -1,4 +1,4 @@
-<schema adapter="eor">
+<schema>
 	<element tablename="eor_remittance_fund">
 		<field name="objid" primary="true" prefix="EORRMFND" />
 		<field name="remittanceid" required="true"/>

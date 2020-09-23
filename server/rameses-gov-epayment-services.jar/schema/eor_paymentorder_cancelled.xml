@@ -1,4 +1,4 @@
-<schema adapter="eor"> 
+<schema> 
 	<element tablename="eor_paymentorder_cancelled">
 		<field name="objid" primary="true" visible="true" caption="Order No" searchable="true" indexed="true"/>
 		<field name="state" />

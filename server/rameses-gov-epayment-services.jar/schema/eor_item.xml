@@ -1,4 +1,4 @@
-<schema adapter="eor">
+<schema>
 	<element tablename="eor_item">
 		<field name="objid" primary="true"/>
 		<field name="parentid" required="true"/>
