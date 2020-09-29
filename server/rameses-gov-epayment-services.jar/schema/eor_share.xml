@@ -1,4 +1,4 @@
-<schema adapter="eor">
+<schema>
 	<element tablename="eor_share">
 		<field name="objid" primary="true" prefix="EORSHR"/>
 		<field name="parentid" required="true"/>

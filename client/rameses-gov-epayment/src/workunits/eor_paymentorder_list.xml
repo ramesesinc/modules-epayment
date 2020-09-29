@@ -6,7 +6,7 @@
         <invoker folderid="menucategory/treasury/epayment" 
                  caption="View Payment Orders" 
                  role="MASTER" action="init"
-                 cols="objid,txndate,txntypename,payer.name,amount,expirydate,refno,controlno" 
+                 cols="objid,txndate,txntypename,paidby,amount,expirydate,refno,controlno" 
                  hiddenCols="txntype"/>
     </invokers>
     

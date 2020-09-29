@@ -9,8 +9,13 @@ import com.rameses.seti2.models.*;
  
 public class PaymentPartnerListModel extends CrudListModel  {
     
+    @Service("EPaymentPartnerService")
+    def partnerSvc;
+    
     void syncCloud() {
-        MsgBox.alert('Already updated');  
+        partnerSvc.syncPaymentPartner();
+        reload();
+        MsgBox.alert('Sync completed!');  
     }
 
 }

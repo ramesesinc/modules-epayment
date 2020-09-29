@@ -1,4 +1,4 @@
-<schema adapter="eor">
+<schema>
 	<element tablename="eor_remittance">
 		<field name="objid" primary="true" prefix="EORRMT"/>
 

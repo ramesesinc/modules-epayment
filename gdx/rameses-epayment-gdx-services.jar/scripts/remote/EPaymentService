@@ -5,11 +5,13 @@ import com.rameses.services.extended.*
 
 class EPaymentService  {
 
-    @Service(value="OnlinePaymentService", connection="local-epayment-server")
+    @Service(value="EPaymentService", connection="local-epayment-server")
     def localSvc;
 
     @Service(value="epayment/CloudPaymentService", connection="cloud-server")
     def cloudSvc;
+
+    
 
     @ProxyMethod
     public def createPaymentOrder(def params) {
@@ -28,6 +30,7 @@ class EPaymentService  {
 
             //activate the state. activated means it is actually updated in the cloud.
             localSvc.activatePaymentOrder( [objid:po.objid] );
+
             return po;
         }
         catch(e) {
