@@ -24,8 +24,8 @@ class EPaymentPluginInterceptor {
 			def t = svc.lookup(serviceName, conn );
 			if(!t) throw new Exception(serviceName + " not found for "+handler +" @connection "+conn);
 			a.reftype = "eor";
-			def aa = t.verifyPayment( a );			
-			a.putAll( aa );
+			def aa = t.verifyPayment( a );	
+			if(aa) a.putAll( aa );
 		}
 	}
 

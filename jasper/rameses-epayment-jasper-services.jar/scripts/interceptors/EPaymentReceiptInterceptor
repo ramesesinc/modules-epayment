@@ -29,7 +29,7 @@ class EPaymentReceiptInterceptor {
         o.modulename = "epayment";
     }   
 
-    @Before(pattern="JasperReportEmailService.send", eval="#{ args[0].reportid == 'eor' }")
+    @Before(pattern="JasperReportEmailService.send", eval="#{ args[0].reportid == 'eor' }", index=-10000)
     public void emailEOR(def evt) {
         def o = evt.args[0];
         def refid = o.refid;
