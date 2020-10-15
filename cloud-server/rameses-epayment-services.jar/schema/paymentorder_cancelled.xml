@@ -6,7 +6,6 @@
 		<field name="txntypename" required="true"/> 
 		<field name="orgcode" required="true"/> 
 		<field name="refno" required="true"/> 
-		<field name="paymentrefid" required="true"/> 
 		<field name="amount" required="true" type="decimal"/> 
 		<field name="controlno" required="true"/> 
 		<field name="paidby" required="true"/> 
@@ -18,6 +17,7 @@
 		<field name="expirydate"/>  
 		<field name="webfee" required="true" type="decimal"/>  
 		<field name="cachekey"/>  
+		<field name="checkoutid"/>  
 	</element>
 </schema>
 
