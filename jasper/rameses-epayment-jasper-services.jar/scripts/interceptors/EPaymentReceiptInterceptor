@@ -5,7 +5,7 @@ import treasury.utils.*;
 
 class EPaymentReceiptInterceptor {
 
-    @Service(value="EPaymentService", connection="local-epayment-server")
+    @Service(value="EPaymentService", connection="epayment")
     def epmtSvc;
 
     @Service("NumberService")
@@ -18,7 +18,7 @@ class EPaymentReceiptInterceptor {
         return rct;
     }
 
-    @Before(pattern="JasperReportService.generateReport", eval="#{ args[0].reportid == 'eor' }")
+    @Before(pattern="JasperReportService.generateReport", eval="#{ args[0].reportid == 'eor' }", index=-1000)
     public void getReport(def evt) {
         def o = evt.args[0];
         def refid = o.refid;
@@ -32,6 +32,7 @@ class EPaymentReceiptInterceptor {
     @Before(pattern="JasperReportEmailService.send", eval="#{ args[0].reportid == 'eor' }", index=-10000)
     public void emailEOR(def evt) {
         def o = evt.args[0];
+
         def refid = o.refid;
         def data = getEOR( [objid: refid] );
 
@@ -42,8 +43,9 @@ class EPaymentReceiptInterceptor {
         o.txntype = data.paymentorder?.txntype;
         o.to = o.email;
         o.subject = "EOR No. " + data.receiptno;
-        o.message = "Dear valued customer <br>Please see attached Electronic OR";
+        o.message = "Dear valued customer <br>Please see attached Electronic OR. This is an electronic transaction. Do not reply";
         o.connection = "primary-email-server";
+
     }   
 
 }

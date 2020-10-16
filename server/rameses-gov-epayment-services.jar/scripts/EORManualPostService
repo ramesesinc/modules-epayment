@@ -1,0 +1,32 @@
+import com.rameses.annotations.*
+import com.rameses.util.*
+import com.rameses.common.*
+
+
+class EORManualPostService   {
+
+	@Service("DateService")
+	def dateSvc;
+
+    @DataContext("eor_manual_post")	
+    def manualPostEm;
+
+    @Env
+    def env;
+
+
+    @ProxyMethod
+    public def post( def o ) {
+    	o.createdby = [objid:env.USERID, name:env.FULLNAME];
+    	o.dtcreated = dateSvc.getServerDate();
+    	o.state = "POSTED";
+		manualPostEm.create( o );
+    }
+
+ 	@ProxyMethod
+    public def open( def o ) {
+		return manualPostEm.find([objid: o.objid]).first();
+    }
+
+
+}

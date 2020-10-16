@@ -19,7 +19,7 @@ class EPaymentPluginInterceptor {
 			def conn = p.connection;
 			def serviceName = p.servicename;
 			if(!conn) {
-				conn = "local-"+p.objid+"-server";
+				conn = p.objid;
 			}
 			def t = svc.lookup(serviceName, conn );
 			if(!t) throw new Exception(serviceName + " not found for "+handler +" @connection "+conn);
@@ -28,7 +28,6 @@ class EPaymentPluginInterceptor {
 			if(aa) a.putAll( aa );
 		}
 	}
-
 
 	@After(pattern="EORService.post", eval="#{args[0].txntype!=null}", index=10000 )
 	public void afterPostPayment(def evt) {
@@ -41,7 +40,7 @@ class EPaymentPluginInterceptor {
 			def conn = p.connection;
 			def serviceName = p.servicename;
 			if(!conn) {
-				conn = "local-"+p.objid+"-server";
+				conn = p.objid;
 			}
 			def t = svc.lookup(serviceName, conn );
 			if(!t) throw new Exception(serviceName + " not found for "+handler +" @connection "+conn);
@@ -60,7 +59,7 @@ class EPaymentPluginInterceptor {
 			def conn = p.connection;
 			def serviceName = p.servicename;
 			if(!conn) {
-				conn = "local-"+p.objid+"-server";
+				conn = p.objid;
 			}
 			if(!serviceName) {
 				serviceName = "EPaymentService";
