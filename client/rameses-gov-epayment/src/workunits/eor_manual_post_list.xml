@@ -1,0 +1,9 @@
+<workunit extends="com/rameses/seti2/templates/CrudList.xml" 
+    schemaName="eor_manual_post" allowCreate="false" allowEdit="false" allowDelete="false">
+    <invokers>
+        <invoker folderid="menucategory/treasury/epayment" caption="Manually Posted EOR List" 
+                 action="init" index="51"
+                 cols="paymentorderno,amount,paymentpartnerid,traceid,tracedate,createdby.name,dtcreated"
+                 orderBy="dtcreated"   />
+   </invokers>
+</workunit>

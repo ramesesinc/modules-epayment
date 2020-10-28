@@ -38,10 +38,11 @@ class CloudPaymentService {
 		//my suggestion is create a table in this domain, not the partner.	
 
 		param.webfee = 0.0; 
-		param.objid = param.objid;
 
 		def df = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		param.txndate = df.format(param.txndate);
+		if ( param.txndate instanceof java.util.Date ) {
+			param.txndate = df.format( param.txndate );	
+		}
 
 		return po_db.create( param );
 	} 

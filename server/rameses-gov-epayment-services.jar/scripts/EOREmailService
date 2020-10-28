@@ -1,0 +1,38 @@
+import com.rameses.annotations.*
+import com.rameses.util.*
+import com.rameses.common.*
+
+
+class EOREmailService   {
+
+    @Service("DateService")
+    def dateSvc;
+
+    @DataContext("eor")
+    def eorEm;
+
+    @DataContext("eor_for_email")
+    def emailEm; 
+
+    @ProxyMethod
+    public def resend( def o ) {
+        def eor = eorEm.find( [objid: o.objid]).first();
+
+        //save also eor for emailing  
+        def mm = [:];
+        mm.objid = eor.objid;
+        mm.state = 0;
+        mm.txndate = dateSvc.getServerDate();
+        mm.email = eor.paymentorder.email;
+        mm.mobileno = eor.paymentorder.mobileno;
+        mm.eor = [objid: eor.objid];
+        emailEm.create( mm );
+    }
+
+
+    @ProxyMethod
+    public def reactivate( def o ) {
+        emailEm.find( [objid: o.objid ]).update([state:0, errmsg: "{NULL}"]) 
+    }
+
+}

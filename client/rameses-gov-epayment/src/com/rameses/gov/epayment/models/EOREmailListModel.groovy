@@ -11,19 +11,16 @@ import java.text.*;
 /*******************************************************************************
 * This class is used for Rental, Other Fees and Utilities
 ********************************************************************************/
-public class EORModel extends CrudFormModel  {
+public class EOREmailListModel extends CrudListModel  {
 
     @Service("EOREmailService")
     def eorEmailSvc;
     
-    def preview() {
-        return Inv.lookupOpener("eor:printout", [query: [ objid: entity.objid ]] );
+    void reactivate() {
+        if(!selectedItem) throw new Exception("Please select an item");
+        eorEmailSvc.reactivate( [objid: selectedItem.objid ]);
+        listHandler.reload();
     }
     
-    def resend() {
-        if(!MsgBox.confirm("You are about to resend this email. Proceed?")) return null;
-        eorEmailSvc.resend( [objid: entity.objid ] );
-        MsgBox.alert("Email sent");
-    }
     
 }

@@ -32,7 +32,7 @@ class EPaymentService   {
     @Service("EORService")
     def eorSvc;  
 
-    @Service(value='OrgService', connection="local-admin-server")
+    @Service(value='OrgService', connection="admin")
     def orgSvc; 
 
     @Service("DateService")
@@ -117,6 +117,7 @@ class EPaymentService   {
             mm.txndate = dateSvc.getServerDate();
             mm.email = po.email;
             mm.mobileno = po.mobileno;
+            mm.eor = [objid: r.objid];
             emailEm.create( mm );
 
             return r;

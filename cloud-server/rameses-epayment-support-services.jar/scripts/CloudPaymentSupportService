@@ -52,8 +52,8 @@ class CloudPaymentSupportService {
 			return [msg: 'Payment Order not found'];
 		}
 
-		def pay = pay_db.find([ paymentrefid: po.paymentrefid ]).first();
-		if ( !pay ) return [msg: 'Payment transaction not found for controlno '+ po.controlno +' with paymentrefid '+ po.paymentrefid];
+		def pay = pay_db.find([ paymentrefid: po.objid ]).first();
+		if ( !pay ) return [msg: 'Payment transaction not found for controlno '+ po.controlno +' with paymentrefid '+ po.objid];
 
 		def paypart = paypartner_db.find([ objid: pay.paypartnerid ]).first();
 		if ( !paypart ) return [msg: 'Pay Partner record not found for '+ pay.paypartnerid]; 
@@ -101,8 +101,8 @@ class CloudPaymentSupportService {
 		po = po_db.find([ controlno: param.controlno ]).first();
 		if ( !po ) return [msg: 'Payment Order not found for control number '+ param.controlno]; 
 
-		def pay = pay_db.find([ paymentrefid: po.paymentrefid ]).first();
-		if ( pay ) return [msg: 'Payment transaction found for control number '+ po.controlno +' with paymentrefid '+ po.paymentrefid];
+		def pay = pay_db.find([ paymentrefid: po.objid ]).first();
+		if ( pay ) return [msg: 'Payment transaction found for control number '+ po.controlno +' with paymentrefid '+ po.objid];
 
 		def rundate = dateSvc.getServerDate(); 
 

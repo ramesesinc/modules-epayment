@@ -21,12 +21,13 @@ class DbpPaymentPartnerOptionInterceptor {
 		def params = [:];
 		
 		params.terminalID = partner.info?.terminalid;
-		params.referenceCode = po.paymentrefid; 
+		params.referenceCode = po.objid; 
 		params.serviceType = po.particulars; 
 		params.amount = ( po.amount == null ? "" : formatter.format( po.amount )); 
 
-		def secval = partner.info?.terminalid + po.paymentrefid + '{' + partner.info?.transactionkey + '}'; 
+		def secval = partner.info?.terminalid + po.objid + '{' + partner.info?.transactionkey + '}'; 
 		params.securityToken = com.rameses.util.Encoder.SHA1.encode(secval);
+		println 'DBP getPaymentPartnerOption params => ' + params; 
 		partner.params = params; 
 	}
 

@@ -11,7 +11,6 @@ class LbpPaymentPartnerOptionInterceptor {
 	@Before(pattern="CloudPaymentService.postPartnerPayment", eval="#{args[0].statusid == 'landbanksuccess' }")
 	public void beforePostPartnerPayment(evt) { 
 		def m = evt.args[0];
-		println 'M => ' + m;
 		m.paypartnerid = 'LBP'; 
 		m.paymentrefid = m.MerchantRefNo; 
 	}
@@ -35,9 +34,9 @@ class LbpPaymentPartnerOptionInterceptor {
 		params.ReturnURLOK = ( partner.info?.testsuccessurl ? partner.info?.testsuccessurl : partner.info?.successurl ); 
 		params.ReturnURLError = ( partner.info?.testerrorurl ? partner.info?.testerrorurl : partner.info?.errorurl ); 
 
-		println 'lbc getPaymentPartnerOption params => ' + params
 		def secval = partner.info?.merchantcode + po.objid + samt.replace('.','');
     	params.Hash = com.rameses.util.Encoder.MD5.encode(secval).toLowerCase();
+		println 'LBP getPaymentPartnerOption params => ' + params; 
 		partner.params = params; 
 	}
 

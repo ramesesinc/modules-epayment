@@ -1,0 +1,20 @@
+<workunit schemaName="eor_manual_post">
+    <invokers>
+         <invoker folderid="menucategory/treasury/epayment" 
+            action="create"
+            role="MANAGER"
+            index="50"
+            caption="Manual EOR Posting" target="popup"/>
+         
+         <invoker type="eor_manual_post:open" action="open"
+            caption="Manual EOR Posting" target="popup"/>
+         
+         <!-- form actions -->
+         <invoker type="formActions" action="_close" immediate="true" caption="Close"/>
+         
+    </invokers>
+    <code class="com.rameses.gov.epayment.models.EORManualPostModel" />
+    <pages>
+        <page template="com.rameses.gov.epayment.views.EORManualPostPage" />
+    </pages>
+</workunit>
