@@ -1,11 +1,22 @@
 <schema>
 	<element tablename="eor_payment_error">
 		<field name="objid" primary="true" prefix="ERR"/>
-		<field name="txndate" required="true"/>
-		<field name="txntype" required="true"/>
-		<field name="paymentrefid" required="true"/>
+		<field name="txndate" />
 		<field name="errmsg" required="true"/>
 		<field name="errdetail" required="true"/>
+		<field name="paymentrefid" required="true"/>
+
+		<!-- 
+		errcode for recovering the error. 
+		0 = not posted so must run the post Payment. run EPaymentService.postPayment
+		1 = payment posted but not update in cloud. run EPayment.updateCloudPayment
+		2 = payment posted and updated in cloud but not emailed. run EPayment.emailPayment
+		-->
+		<field name="errcode" required="true" type="integer"/>
+
+		<complex name="paymentorder" ref="eor_paymentorder" jointype="many-to-one" required="false" includefields="objid,txntype,amount">
+			<key field="paymentrefid" target="objid" />
+		</complex>	
 	</element>
 </schema>	
 

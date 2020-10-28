@@ -1,0 +1,50 @@
+import com.rameses.annotations.*
+import com.rameses.util.*
+import com.rameses.common.*
+import treasury.utils.*;
+
+class EORFormReportInterceptor {
+
+    @Service(value="EPaymentService")
+    def epmtSvc;
+
+    @Service("NumberService")
+    def numSvc;
+
+    def getEOR( def o ) {
+        def rct = epmtSvc.getReceipt( [objid: o.objid ] );
+        rct.qrcode = "qrcode:" + rct.receiptno;
+        rct.amountinwords = numSvc.doubleToWords( rct.amount );
+        rct.template = "reports/epayment/eor51";        
+        return rct;
+    }
+
+    @After(pattern="FormReportService.getData", eval="#{args[0].reportid == 'eor' }")
+    public void getEORReport( def evt ) {
+        def p = evt.args[0];
+        def result = evt.result;
+        def objid = p.parameters.objid;
+        if(!objid) throw new Exception("objid is required in eor report");
+        result.data = getEOR( [objid: objid ] );
+    }   
+
+    @Before(pattern="JasperEmailQueueService.send", eval="#{args[0].reportid == 'eor' }")
+    public void beforeQueueEmail( def evt ) {
+        def p = evt.args[0];
+        def data = epmtSvc.getReceipt( [objid: p.refid ] );
+        p.to = data.paymentorder.email;
+        p.info = data;
+    }
+
+    @Before(pattern="JasperReportEmailService.send", eval="#{ args[0].reportid == 'eor' }", index=-10000)
+    public void beforeSendEmail(def evt) {
+        def o = evt.args[0];
+        def refid = o.refid;
+        o.attachments = [
+            [ title: "EOR.pdf", reportid: "eor", parameters: [objid: refid] ]
+        ];
+        o.connection = "primary-email-server";
+    } 
+
+
+}

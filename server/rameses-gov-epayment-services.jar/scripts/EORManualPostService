@@ -11,16 +11,38 @@ class EORManualPostService   {
     @DataContext("eor_manual_post")	
     def manualPostEm;
 
+    @Service("EPaymentService")
+    def epaymentSvc;
+
+    @Service(value="epayment/CloudPaymentService", connection="cloud-server")
+    def cloudSvc;
+
     @Env
     def env;
-
 
     @ProxyMethod
     public def post( def o ) {
     	o.createdby = [objid:env.USERID, name:env.FULLNAME];
     	o.dtcreated = dateSvc.getServerDate();
     	o.state = "POSTED";
-		manualPostEm.create( o );
+		o = manualPostEm.create( o );
+
+        def z = [:];
+        z.paypartnerid = o.paymentpartnerid;
+        z.paymentrefid = o.paymentorderno;
+        z.traceid = o.traceid;
+        z.tracedate = o.tracedate;
+        z.amount = o.amount;
+        def pay = cloudSvc.postPayment( z );
+
+        def m = [:];
+        m.paymentrefid = o.paymentorderno;
+        m.amount = o.amount;
+        m.txntype = o.txntype;
+        m.partnerid = o.paymentpartnerid;
+        m.traceid = o.traceid;
+        m.tracedate = o.tracedate;
+        epaymentSvc.postPayment( m );
     }
 
  	@ProxyMethod

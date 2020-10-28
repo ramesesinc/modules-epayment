@@ -1,8 +1,6 @@
 <workunit extends="com/rameses/seti2/templates/CrudForm.xml" schemaName="eor" allowEdit="false" allowCreate="false">
     <invokers>
          <invoker type="eor:open" caption="EOR" action="open" target="popup"/>
-         <!-- form actions-->
-         <invoker type="formActions" caption="Resend Email" action="resend" />         
     </invokers>
     <code class="com.rameses.gov.epayment.models.EORModel" />
     <pages>
