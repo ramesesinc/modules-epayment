@@ -23,9 +23,6 @@ class EPaymentService   {
     @DataContext("eor_payment_error")
     def err_db; 
 
-    @DataContext("eor_for_email")
-    def emailEm; 
-
     @Env 
     def env; 
 
@@ -34,6 +31,8 @@ class EPaymentService   {
 
     @Service(value='OrgService', connection="admin")
     def orgSvc; 
+
+
 
     @Service("DateService")
     def dateSvc;
@@ -44,14 +43,17 @@ class EPaymentService   {
     @Service("NumberService")
     def numSvc;
 
+    @Service("JasperEmailQueueService")
+    def emailQueueSvc;
+
+    @Service(value="epayment/CloudPaymentService", connection="cloud-server")
+    def cloudSvc;
 
     private void initEnv() {
         env.USERID = 'E-PAYMENT'; 
         env.FULLNAME = 'E-PAYMENT';
         env.USERNAME = 'E-PAYMENT';
     }
-
-
 
     //this method will be intercepted by the other modules based on the txntype 
     @ProxyMethod
@@ -72,7 +74,17 @@ class EPaymentService   {
         info.expirydate = new java.sql.Timestamp( cal.getTimeInMillis() ); 
         if ( info.txntypename==null ) info.txntypename = info.txntype; 
         info.state = 'PENDING';
-        return poEm.create( info ); 
+        def po = poEm.create( info ); 
+
+        po.orgcode = info.orgcode;
+        po.refno = info.refno;
+        po.origin = info.origin;
+
+        //execute creation of payment order in cloud
+        cloudSvc.createPaymentOrder( po );
+
+        //activate the state. activated means it is actually updated in the cloud.
+        activatePaymentOrder( [objid:po.objid] );        
     }
 
     @ProxyMethod
@@ -89,49 +101,83 @@ class EPaymentService   {
         poEm.find([ objid: po.objid ]).delete(); 
     } 
 
+    
+
+    @ProxyMethod(local=true)
+    public void emailPayment( def r ) {
+        try {
+            //save also eor for emailing. The other data is fetched from the interceptor  
+            def mm = [:];
+            mm.reportid = "eor";
+            mm.refid = r.objid;
+            emailQueueSvc.send( mm );
+        }
+        catch( Throwable ee ) {
+            def m = buildErrorInfo( t ); 
+            println 'email payment error '+ r.paymentrefid +' caused by: '+ m.errmsg; 
+            m.paymentrefid = r.paymentrefid; 
+            m.txndate = dateSvc.getServerDate();
+            m.errcode = 2;
+            err_db.create( m );  
+        }
+    }
+
+    @ProxyMethod(local=true)
+    public def updateCloudPayment( def r ) {
+        //attempt to post in cloud 
+        try {
+            def rm = [:];
+            rm.receiptno = r.receiptno;
+            rm.receiptid = r.objid;
+            rm.receiptdate = r.receiptdate; 
+            rm.paymentrefid = r.paymentrefid;        
+            cloudSvc.updatePaymentReceipt( rm );
+        }
+        catch( Throwable t) {
+            def m = buildErrorInfo( t ); 
+            println 'update cloud payment error '+ r.paymentrefid +' caused by: '+ m.errmsg; 
+            m.paymentrefid = r.paymentrefid; 
+            m.txndate = dateSvc.getServerDate();
+            m.errcode = 1;
+            err_db.create( m );  
+            return null;
+        }   
+        emailPayment( r ); 
+    }
+
     @ProxyMethod(local=true)
     public def postPayment( def o ) {
         initEnv(); 
-        
-        if (!o.txntype) return [status:1, message:'txntype is required'];
-
-        def po = poEm.find([ objid: o.paymentrefid ]).first();
-        if ( !po?.objid ) throw new Exception('Payment Order No. ' + o.paymentrefid + ' does not exist or has already been processed.')
-
-        if (o.tracedate instanceof String ) {
-            def df = new java.text.SimpleDateFormat("yyyy-MM-dd");
-            o.tracedate = df.parse( o.tracedate );
-        }
-
-        po.partnerid = o.partnerid; 
-        po.tracedate = o.tracedate; 
-        po.traceid = o.traceid;
-
+        def paymentrefid = o.paymentrefid;
+        def retval = null;
         try { 
-            def r = eorSvc.post( po ); 
-            
-            //save also eor for emailing  
-            def mm = [:];
-            mm.objid = r.objid;
-            mm.state = 0;
-            mm.txndate = dateSvc.getServerDate();
-            mm.email = po.email;
-            mm.mobileno = po.mobileno;
-            mm.eor = [objid: r.objid];
-            emailEm.create( mm );
+            def po = poEm.find([ objid: paymentrefid ]).first();
+            if ( !po?.objid ) throw new Exception('Payment Order No. ' + paymentrefid + ' does not exist or has already been processed.')
+            if (o.tracedate instanceof String ) {
+                def df = new java.text.SimpleDateFormat("yyyy-MM-dd");
+                o.tracedate = df.parse( o.tracedate );
+            }
+            if(po.amount != o.amount) throw new Exception("Amount does not match");
+            if(po.txntype != o.txntype) throw new Exception("txntype does not match. Txntype passed is " + o.txntype );
 
-            return r;
+            po.partnerid = o.partnerid; 
+            po.tracedate = o.tracedate; 
+            po.traceid = o.traceid;
+            retval = eorSvc.post( po );
         } 
         catch(Throwable t) { 
             def m = buildErrorInfo( t ); 
-            println 'payment posting error '+ po.objid +' caused by: '+ m.errmsg; 
-            m.paymentrefid = po.objid; 
-            m.txndate = o.txndate;
-            m.txntype = o.txntype;
+            println 'payment posting error '+ paymentrefid +' caused by: '+ m.errmsg; 
+            m.paymentrefid = paymentrefid; 
+            m.txndate = dateSvc.getServerDate();
+            m.errcode = 0;
             err_db.create( m );  
             return null;
         } 
-    }
+
+        updateCloudPayment( retval );
+        return retval;
+    }    
 
     private def buildErrorInfo( Throwable t ) {
         def m = [:];  

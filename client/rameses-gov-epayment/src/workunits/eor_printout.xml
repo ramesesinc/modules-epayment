@@ -1,0 +1,9 @@
+<workunit extends="com/rameses/jasper/templates/JasperFormReport.xml"> 
+    <invokers>
+        <invoker type="eor:form:formActions" 
+                 caption="View Printout"
+                 action="preview" 
+                 index="1" 
+                 reportId="eor" />
+    </invokers>
+</workunit>

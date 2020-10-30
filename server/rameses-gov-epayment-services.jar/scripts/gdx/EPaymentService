@@ -1,0 +1,34 @@
+import com.rameses.annotations.*
+import com.rameses.util.*
+import com.rameses.common.*
+import com.rameses.services.extended.*
+
+class EPaymentService  {
+
+    @Service(value="EPaymentService")
+    def localSvc;
+
+    @ProxyMethod
+    public def createPaymentOrder(def params) {
+        if(!params.refno) throw new Exception("Please indicate a billing refno");
+        if(!params.orgcode) throw new Exception("Please include orgcode"); 
+        if(!params.txntype) throw new Exception("Please include txntype"); 
+        params.each { k,v->
+            println k+"="+v;
+        }
+        return localSvc.createPaymentOrder( params );
+    }
+
+    @ProxyMethod
+    public void postPayment(def p) {
+        localSvc.postPayment( p );
+    }    
+
+    @ProxyMethod
+    public void onCancelPayment( p ) {
+        localSvc.cancelPaymentOrder( [refno: p.refno ]);
+    }
+
+
+}
+
