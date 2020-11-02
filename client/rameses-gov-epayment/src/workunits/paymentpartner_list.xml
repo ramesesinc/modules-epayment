@@ -1,14 +1,10 @@
 <workunit extends="com/rameses/seti2/templates/CrudList.xml" schemaName="paymentpartner" 
           allowCreate="false" allowEdit="false" allowDelete="false">
     <invokers>
-        <invoker folderid="/explorer/master/epayment" caption="Payment Partner" role="MASTER" 
+        <invoker folderid="/menucategory/epayment/txn" caption="Payment Partner" role="MASTER" 
                  cols="objid,code,name"
                  action="init"/>
         
-         <invoker folderid="/menucategory/treasury/epayment" caption="Payment Partner" role="MASTER" 
-                 cols="objid,code,name,branch"
-                 action="init" index="-5"/>
-         
          <invoker type="listActions" caption="Sync from Cloud" action="syncCloud" />
    </invokers>
    <code class="com.rameses.gov.epayment.models.PaymentPartnerListModel"/> 

@@ -13,9 +13,6 @@ class EPaymentService  {
         if(!params.refno) throw new Exception("Please indicate a billing refno");
         if(!params.orgcode) throw new Exception("Please include orgcode"); 
         if(!params.txntype) throw new Exception("Please include txntype"); 
-        params.each { k,v->
-            println k+"="+v;
-        }
         return localSvc.createPaymentOrder( params );
     }
 

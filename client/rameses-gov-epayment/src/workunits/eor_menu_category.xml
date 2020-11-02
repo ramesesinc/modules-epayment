@@ -1,0 +1,11 @@
+<workunit extends="com/rameses/menu/templates/FXMenuCategory.xml" context="epayment" cols="2">
+    <invokers>
+        <invoker type="home.action" 
+                icon="home/icons/epayment.png"
+                 role=".*"
+                 caption="E-Payment" 
+                 notificationid="epayment"
+                 index="1" action="init"/>
+    </invokers> 
+    <code class="com.rameses.gov.etracs.obo.models.OboFXMenuCategoryModel" />
+</workunit>

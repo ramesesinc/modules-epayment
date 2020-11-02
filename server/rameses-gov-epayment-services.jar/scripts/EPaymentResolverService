@@ -2,47 +2,44 @@ import com.rameses.annotations.*
 
 class EPaymentResolverService {
 
-    @Service("OnlinePaymentService")
-    def localSvc;
+    @Service("EPaymentService")
+    def epaymentSvc;
 
-    @DataContext("eor_paymentorder")
-    def po_db;
+    @DataContext("eor_payment_error")
+    def error_db;
 
-    @DataContext("eor_paymentorder_paid")
-    def po_paid_db;
-
-    @DataContext("eor")
-    def eor_db;
-
-
-    @Service(value="epayment/CloudPaymentService", connection="cloud-server")
-    def cloudSvc;
-
-    @Service(value="OrgService", connection="admin")
-    def orgSvc;
+    @Service(value="epayment/QueryService", connection="cloud-server")
+    def cloudQrySvc;
 
     @ProxyMethod
-    public def getList() {
-        def org = orgSvc.getRoot();
-        return cloudSvc.getUnpostedPaymentList( [orgcode: org.objid ]);
-    }
+    public void resolveError( p ) {  
+        def err = error_db.find( [objid: p.objid ] ).first();
 
-    @ProxyMethod
-    public void resolve( p ) {  
-        // check first if the payment order is still in unpaid mode.
-        // if it is already paid then we only need to update the EOR in the cloud
-        def eorinfo = eor_db.find([ paymentrefid: p.paymentrefid ]).first(); 
-        if ( eorinfo?.objid ) {
-            def m = [:]; 
-            m.receiptid = eorinfo.objid; 
-            m.receiptno = eorinfo.receiptno; 
-            m.receiptdate = eorinfo.receiptdate; 
-            m.paymentrefid = eorinfo.paymentrefid;
-            cloudSvc.updatePaymentReceipt( m ); 
-        } 
+        //delete error after everything. If there are other process errors, a new error will be created by the epayment service.
+        error_db.find( [objid: p.objid ] ).delete();
+
+        if( err.laststate == 0 ) {
+            def m = [:];
+            m._schemaname = "payment";
+            m.findBy = [ paymentrefid: err.paymentrefid  ];
+            def pmt = cloudQrySvc.findFirst( m );
+            if( pmt.receiptno ) throw new Exception("This transaction was already paid. Please refer to EOR No." + pmt.receiptno );
+            pmt.laststate = err.laststate;
+
+            def pr = [:];
+            pr.traceid = pmt.traceid;
+            pr.tracedate = pmt.tracedate;
+            pr.amount = pmt.amount;
+            pr.txntype = pmt.paymentorder.txntype;
+            pr.partnerid = pmt.paypartnerid;
+            pr.paymentrefid = pmt.paymentrefid;
+
+            epaymentSvc.postPayment( pr );
+        }
         else {
-            def r = localSvc.postPayment( p ); 
-            if ( r ) cloudSvc.updatePaymentReceipt( r );
-        } 
+            epaymentSvc.postPayment( [paymentrefid: p.paymentrefid, laststate: err.laststate ] );            
+        }
     }  
+
+
 }

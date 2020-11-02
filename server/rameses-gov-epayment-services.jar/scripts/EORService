@@ -8,12 +8,6 @@ class EORService {
     @Env 
     def env 
 
-    @DataContext('eor')
-    def eorEm;
-
-    @DataContext('paymentpartner')
-    def partnerEm;
-
     @Service("DateService")
     def dateService
         
@@ -23,17 +17,27 @@ class EORService {
     @Service("EORNumberService")
     def eorNumSvc;
 
+    @Service(value="RevenueSharingService", connection="treasury")
+    def sharingSvc;
+
+    @DataContext('eor')
+    def eorEm;
+
+    @DataContext('paymentpartner')
+    def partnerEm;
+
     @DataContext("eor_paymentorder")
     def poEm; 
 
     @DataContext("eor_paymentorder_paid")
     def po_paid_db; 
 
+
     @ProxyMethod
     public def post( def po ) {
-
         if(!po.items)
             throw new Exception("Please provide items in EORService.post");      
+
         def svrDate = dateService.serverDate;
         def entity = [:];
         entity.partnerid = po.partnerid;
@@ -62,15 +66,21 @@ class EORService {
             throw new Exception("entity.paymentrefid is null");
 
         entity.items = po.items; 
-        entity.sharing = po.sharing;
-        def e = eorEm.create( entity ); 
 
-        //transfer the po after successful create of the eor
+        //calculate sharing first
+        entity.sharing = sharingSvc.execute( entity );
+
+        //transfer first the payment order to paid. we need to do this first because it has foreign key constraints by eor.
         po_paid_db.create( po ); 
+
+        //delete the payment order that was already transferred after eor was created.
         poEm.find([ objid: po.objid ]).delete(); 
 
-        e.paymentorder = po;
-        return e;
+        //save the entity
+        entity = eorEm.create( entity ); 
+
+        return eorEm.find( [objid: entity.objid] ).first(1);
+
     }   
 
     

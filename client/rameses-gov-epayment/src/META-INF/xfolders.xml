@@ -25,6 +25,9 @@
         <folder id="treasury" caption="Treasury">
             <folder id="epayment" caption="E-Payment" index="0" icon="home/icons/epayment.png" />
         </folder>
+        <folder id="epayment" caption="E-Payment">
+            <folder id="txn" caption="Transactions" index="0" icon="home/icons/folder.png"/>
+            <folder id="setting" caption="Settings" index="0" icon="home/icons/folder.png"/>
+        </folder>    
     </folder>
-    
 </folders>

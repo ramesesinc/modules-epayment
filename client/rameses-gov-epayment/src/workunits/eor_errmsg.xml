@@ -1,0 +1,9 @@
+<workunit>
+    <invokers>
+         <invoker type="eor_error:view" caption="View Error" action="init" target="popup"/>
+    </invokers>
+    <code class="com.rameses.gov.epayment.models.ErrorMsgModel" />
+    <pages>
+     <page template="com.rameses.gov.epayment.views.ErrorMsgPage" />
+    </pages>
+</workunit>

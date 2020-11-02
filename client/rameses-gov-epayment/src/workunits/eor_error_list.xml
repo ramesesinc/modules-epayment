@@ -1,12 +1,17 @@
 <workunit extends="com/rameses/seti2/templates/CrudList.xml" 
-          schemaName="eor_payment_error" allowCreate="false" allowEdit="false" allowDelete="true">
+          schemaName="eor_payment_error" allowCreate="false" allowEdit="false" allowDelete="false">
     <invokers>
-        <invoker folderid="menucategory/treasury/epayment" caption="EOR Error List" 
+        <invoker folderid="menucategory/epayment/txn" caption="EOR Error List" 
                  role="MASTER" action="init" index="1"
-                 cols="paymentrefid,paymentorder.txntype,paymentorder.amount,errcode,errmsg"/>
+                 cols="paymentrefid,errcode,laststate,errmsg"
+                hiddenCols="errdetail"
+                notificationid="epayment_error" />
         
         <!-- list actions -->
-        <invoker type="listActions" caption="Resolve" /> 
+        <invoker type="listActions" action="resolve" caption="Resolve" />
+        <invoker type="listActions" action="viewError" caption="View Error" />
+        
+         
     </invokers>
     <code class="com.rameses.gov.epayment.models.EORErrorListModel" />
 </workunit>

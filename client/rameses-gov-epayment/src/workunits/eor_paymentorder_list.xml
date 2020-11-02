@@ -3,11 +3,13 @@
           allowCreate="false" allowOpen="false" allowDelete="false">
 
     <invokers>
-        <invoker folderid="menucategory/treasury/epayment" 
+        <invoker folderid="menucategory/epayment/txn" 
                  caption="View Payment Orders" 
                  role="MASTER" action="init"
                  cols="objid,txndate,txntypename,paidby,amount,expirydate,refno,controlno" 
                  hiddenCols="txntype"/>
+        
+      
     </invokers>
     
     <code class="com.rameses.gov.epayment.models.EORPaymentOrderListModel" /> 

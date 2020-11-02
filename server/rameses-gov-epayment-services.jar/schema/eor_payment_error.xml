@@ -4,15 +4,17 @@
 		<field name="txndate" />
 		<field name="errmsg" required="true"/>
 		<field name="errdetail" required="true"/>
-		<field name="paymentrefid" required="true"/>
+		<field name="paymentrefid" required="true" searchable="true"/>
+
+		<field name="errcode" required="true" type="integer"/>
 
 		<!-- 
-		errcode for recovering the error. 
-		0 = not posted so must run the post Payment. run EPaymentService.postPayment
-		1 = payment posted but not update in cloud. run EPayment.updateCloudPayment
-		2 = payment posted and updated in cloud but not emailed. run EPayment.emailPayment
+		lastprocstate = for recovering the error. 
+		0 = eor not yet created
+		1 = eor created but not updated to cloud
+		2 = eor created and updated in cloud but not emailed
 		-->
-		<field name="errcode" required="true" type="integer"/>
+		<field name="laststate" required="true" type="integer"/>
 
 		<complex name="paymentorder" ref="eor_paymentorder" jointype="many-to-one" required="false" includefields="objid,txntype,amount">
 			<key field="paymentrefid" target="objid" />

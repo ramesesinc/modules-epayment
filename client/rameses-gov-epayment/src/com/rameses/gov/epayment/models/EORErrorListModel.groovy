@@ -13,8 +13,24 @@ import java.text.*;
 ********************************************************************************/
 public class EORErrorListModel extends CrudListModel  {
     
+    @Service("EPaymentResolverService")
+    def epmtResolver;
+    
     void resolve() {
-        MsgBox.alert("selected item passed " + selectedItem );
+        if(!selectedItem) throw new Exception("Please select an item ");
+        epmtResolver.resolveError( selectedItem );
+        reload();
     }
     
+    def viewError() {
+        if(!selectedItem) throw new Exception("Please select an item ");
+        return Inv.lookupOpener( "eor_error:view", [entity: selectedItem ]);
+    }
+    
+    def open() {
+        if(!selectedItem) throw new Exception("Please select an item ");
+        return viewError();
+        //return Inv.lookupOpener( "eor_error:view", [errmsg: selectedItem.errdetail ]);
+    }
+
 }
