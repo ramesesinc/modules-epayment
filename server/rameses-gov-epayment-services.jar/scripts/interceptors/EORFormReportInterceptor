@@ -11,12 +11,31 @@ class EORFormReportInterceptor {
     @Service("NumberService")
     def numSvc;
 
+    @Service(dynamic=true)
+    def dynamicSvc;
+
+    @DataContext("epayment_plugin")
+    def pluginEm;
+
+    @DataContext("eor")
+    def eor;
+
     def getEOR( def o ) {
         def rct = epmtSvc.getReceipt( [objid: o.objid ] );
         rct.qrcode = "qrcode:" + rct.receiptno;
         rct.amountinwords = numSvc.doubleToWords( rct.amount );
         rct.template = "reports/epayment/eor51";        
         return rct;
+    }
+
+    def findPluginSvc( txntype ) {
+        def p = pluginEm.find( [objid: txntype ] ).first();
+        if(!p) throw new Exception("Plugin " + txntype + " not found. Please register in epayment_plugin");
+        def serviceName = p.servicename;
+        def conn = p.connection;
+        def t = dynamicSvc.lookup(serviceName, conn );
+        if(!t) throw new Exception(serviceName + " not found for "+handler +" @connection "+conn);
+        return t;
     }
 
     @After(pattern="FormReportService.getData", eval="#{args[0].reportid == 'eor' }")
@@ -40,10 +59,23 @@ class EORFormReportInterceptor {
     public void beforeSendEmail(def evt) {
         def o = evt.args[0];
         def refid = o.refid;
+
+        def eor = getEOR( [objid: refid] );
         o.attachments = [
-            [ title: "EOR.pdf", reportid: "eor", parameters: [objid: refid] ]
+            [ title: "EOR.pdf", reportid: "eor", data: eor ]
         ];
         o.connection = "primary-email-server";
+
+        try {
+            def pluginSvc = findPluginSvc( eor.txntype );
+            def ext = pluginSvc.getEmailAttachments( eor );
+            if( ext ) {
+                o.attachments.addAll( ext );
+            }
+        }
+        catch(ignore) {
+            //
+        }        
     } 
 
 
