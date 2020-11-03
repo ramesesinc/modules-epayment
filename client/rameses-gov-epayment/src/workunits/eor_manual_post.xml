@@ -1,13 +1,18 @@
 <workunit schemaName="eor_manual_post">
     <invokers>
-         <invoker folderid="menucategory/treasury/epayment" 
+        <!--
+        <invoker folderid="menucategory/epayment/txn" 
             action="create"
             role="MANAGER"
             index="50"
             caption="Manual EOR Posting" target="popup"/>
-         
+        -->
+        
          <invoker type="eor_manual_post:open" action="open"
             caption="Manual EOR Posting" target="popup"/>
+         
+         <invoker type="eor_manual_post:create" action="create"
+            caption="New EOR Posting" target="popup"/>
          
          <!-- form actions -->
          <invoker type="formActions" action="_close" immediate="true" caption="Close"/>

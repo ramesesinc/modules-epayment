@@ -21,14 +21,8 @@ class EORRemittanceService {
     @DataContext("fund")
     def fundEm;
 
-    @DataContext("bankaccount")
-    def bankAcctEm;
-
     @Service("DateService")
     def dateSvc;
-
-    @Service("JevService")
-    def jevSvc;    
 
     @Service('EORNumberService')
     def numSvc;
@@ -85,55 +79,6 @@ class EORRemittanceService {
         u.objid = o.objid; 
         return u; 
     } 
-
-    /*
-    @ProxyMethod
-    public def post( o ) {
-        def fundlist = remFundEm.find([ remittanceid : o.objid ]).list();
-        fundlist.each { 
-            if ( !it.bankaccount?.objid ) throw new Exception("Each fund must have a bank account")
-            if ( !it.validation?.refno ) throw new Exception("Each fund must be validated")
-        }
-
-        def ref = [
-            refid: o.objid, 
-            refno: o.controlno,
-            reftype: 'eor_remittance', 
-            refdate: o.controldate, 
-            txntype: 'EOR'
-        ];
-        def jevBatch = [:];
-        jevBatch.ref = ref;
-        jevBatch.funds = [];
-        jevBatch.items = [];
-
-        fundlist.each{
-            jevBatch.funds << [ 
-                objid: it.objid, 
-                refno: o.controlno + it.fund.code, 
-                fund: it.fund, 
-                amount: it.amount  
-            ];
-
-            def itemacctid = bankAcctEm.find([ objid: it.bankaccount.objid ]).select('acctid').val(); 
-            if ( !itemacctid ) throw new Exception('Please specify account in bank account ('+ it.bankaccount.title +')'); 
-
-            jevBatch.items << [
-                cr: 0.0,
-                dr: it.amount,  
-                itemacctid: itemacctid,
-                fundid: it.fund.objid, 
-                bankacctid: it.bankaccount.objid, 
-                _schemaname: 'bankaccount_ledger'
-            ]; 
-        }
-
-        def pm = [ remittanceid: o.objid ];
-        jevBatch.items.addAll( remEm.getIncomeLedgerItems( pm ) );
-        jevBatch.items.addAll( remEm.getPayableLedgerItems( pm ) );
-        jevSvc.createBatch( jevBatch ); 
-    } 
-    */
 
     @ProxyMethod 
     public void updateValidation( params ) {

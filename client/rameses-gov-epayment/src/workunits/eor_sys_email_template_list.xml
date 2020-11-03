@@ -1,6 +1,7 @@
 <workunit extends="com/rameses/jasper/templates/SysEmailTemplateList.xml" >
     <invokers>
-        <invoker folderid="menucategory/treasury/epayment" caption="Email Template" 
+        <invoker folderid="menucategory/epayment/txn" caption="Email Template" 
                  action="init" index="501" role="MASTER"/>
+        
     </invokers>
 </workunit>

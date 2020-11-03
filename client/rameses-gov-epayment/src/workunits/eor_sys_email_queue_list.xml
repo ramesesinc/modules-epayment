@@ -1,6 +1,8 @@
 <workunit extends="com/rameses/jasper/templates/SysEmailQueueList.xml">
     <invokers>
-       <invoker folderid="menucategory/treasury/epayment" caption="Email Queue" 
+        <invoker folderid="menucategory/epayment/txn" caption="Email Queue" 
+                notificationid="epayment_email_queue"
                  action="init" index="500" role="MASTER"/>
+        
     </invokers>
 </workunit>

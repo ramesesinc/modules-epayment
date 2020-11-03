@@ -36,7 +36,7 @@ public class EORManualPostPage extends javax.swing.JPanel {
         xFormPanel1 = new com.rameses.rcp.control.XFormPanel();
         xTextField1 = new com.rameses.rcp.control.XTextField();
         xDecimalField1 = new com.rameses.rcp.control.XDecimalField();
-        xTextField4 = new com.rameses.rcp.control.XTextField();
+        xComboBox1 = new com.rameses.rcp.control.XComboBox();
         xTextField2 = new com.rameses.rcp.control.XTextField();
         xTextField3 = new com.rameses.rcp.control.XTextField();
         xDateField1 = new com.rameses.rcp.control.XDateField();
@@ -59,13 +59,13 @@ public class EORManualPostPage extends javax.swing.JPanel {
         xDecimalField1.setRequired(true);
         xFormPanel1.add(xDecimalField1);
 
-        xTextField4.setCaption("Txn Type");
-        xTextField4.setName("entity.txntype"); // NOI18N
-        xTextField4.setCaptionWidth(200);
-        xTextField4.setPreferredSize(new java.awt.Dimension(0, 20));
-        xTextField4.setRequired(true);
-        xTextField4.setTextCase(com.rameses.rcp.constant.TextCase.NONE);
-        xFormPanel1.add(xTextField4);
+        xComboBox1.setCaption("Txn Type");
+        xComboBox1.setItemKey("");
+        xComboBox1.setItems("txntypes");
+        xComboBox1.setName("entity.txntype"); // NOI18N
+        xComboBox1.setCaptionWidth(200);
+        xComboBox1.setRequired(true);
+        xFormPanel1.add(xComboBox1);
 
         xTextField2.setCaption("Payment Partner Code");
         xTextField2.setName("entity.paymentpartnerid"); // NOI18N
@@ -148,6 +148,7 @@ public class EORManualPostPage extends javax.swing.JPanel {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JScrollPane jScrollPane1;
     private com.rameses.rcp.control.XButton xButton1;
+    private com.rameses.rcp.control.XComboBox xComboBox1;
     private com.rameses.rcp.control.XDateField xDateField1;
     private com.rameses.rcp.control.XDecimalField xDecimalField1;
     private com.rameses.rcp.control.XFormPanel xFormPanel1;
@@ -157,6 +158,5 @@ public class EORManualPostPage extends javax.swing.JPanel {
     private com.rameses.rcp.control.XTextField xTextField1;
     private com.rameses.rcp.control.XTextField xTextField2;
     private com.rameses.rcp.control.XTextField xTextField3;
-    private com.rameses.rcp.control.XTextField xTextField4;
     // End of variables declaration//GEN-END:variables
 }

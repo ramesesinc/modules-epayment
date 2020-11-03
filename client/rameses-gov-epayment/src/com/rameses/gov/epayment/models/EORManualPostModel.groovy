@@ -20,22 +20,34 @@ public class EORManualPostModel  {
     def entity;
     def mode;
     boolean editable;
+    def txntypes;
+    
+    void init() {
+        txntypes = svc.getTxnTypes();
+    }
     
     void create() {
+        init();
         entity = [:];
         mode = "create"
         editable = true;
     }
     
     void open() {
+        init();
         entity = svc.open([objid: entity.objid]);
         mode = "open";
     }
     
     def submit() {
         if(!MsgBox.confirm("You are about to submit this transaction. Please confirm")) return null;
-        svc.post( entity );
-        MsgBox.alert("Transaction successful");
+        def stat = svc.post( entity );
+        if( stat.status == "error") {
+             Modal.show( "eor_error:view",[ entity: stat ]);
+        }
+        else {
+            MsgBox.alert("Transaction successful");
+        }
         return "_close";
     }
     
