@@ -168,17 +168,25 @@ class EPaymentService   {
                 po.traceid = o.traceid;
 
                 def pluginSvc = findPluginSvc( po.txntype );
-                def prevdata = pluginSvc.verifyPayment( po );
-                if(!prevdata) prevdata = [:];
+                def bill = pluginSvc.verifyPayment( po );
+                if(!bill) bill = [:];
 
                 //we must remove objid otherwise it will interfere with our data.
-                prevdata.remove("objid"); 
-                po.putAll( prevdata );   
+                if(bill.items) po.items = bill.items;
+
+                if( bill.amount == null )
+                    throw new Exception("Please include amount in verifyPayment");        
+
+                if( bill.amount == 0 )
+                    throw new Exception("There are no unpaid items for this transaction");        
+
+                if( bill.amount != o.amount )
+                    throw new Exception("Bill amount that does not match with specified amount");
 
                 def eor = eorSvc.post( po );
 
                 errstate = 1;
-                pluginSvc.postPayment( eor );
+                pluginSvc.postPayment( eor, bill );
                 return eor;
             }
             catch( ex ) {
@@ -193,8 +201,10 @@ class EPaymentService   {
 
             if(laststate == 1) {
                 try {
-                    def pluginSvc = findPluginSvc( eor.paymentorder.txntype );
-                    pluginSvc.postPayment( eor );
+                    def po = poPaidEm.find([ objid: eor.paymentrefid ]).first();
+                    def pluginSvc = findPluginSvc( po.txntype );
+                    def bill = pluginSvc.verifyPayment( po );
+                    pluginSvc.postPayment( eor, bill );
                 }
                 catch(ex) {
                     sendError( 0, 1, o.paymentrefid, ex );
@@ -224,16 +234,18 @@ class EPaymentService   {
         }   
     }
 
-    public void emailPayment( def eor ) {
+    public boolean emailPayment( def eor ) {
         try {
             //save also eor for emailing. The other data is fetched from the interceptor  
             def mm = [:];
             mm.reportid = "eor";
             mm.refid = eor.objid;
             emailQueueSvc.send( mm );
+            return true;
         }
         catch( Throwable ee ) {
             sendError( 0, 3, eor.paymentrefid, ex );            
+            return false;
         }
     }
 
@@ -246,10 +258,13 @@ class EPaymentService   {
         def eor = postEOR( o, laststate );
         if(!eor) return null;
 
-        def updated = updateCloudPayment( eor, laststate );
-        if( !updated ) return null;
+        //def updated = updateCloudPayment( eor, laststate );
+        //if( !updated ) return null;
+        eorEm.find( [objid: eor.objid] ).update( [state: "POSTED"] );
 
         emailPayment( eor );
+        return null;
+
     }    
 
 

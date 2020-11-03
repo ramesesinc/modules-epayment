@@ -35,6 +35,9 @@ class EORManualPostService   {
     @DataContext("eor_payment_error")
     def errorEm;
 
+    @Service("EPaymentNotificationService")
+    def notifySvc;
+
     @Env
     def env;
 
@@ -90,9 +93,10 @@ class EORManualPostService   {
         epaymentSvc.postPayment( m );
 
         //check if there are errors
-        //check if there are errors
         def err = errorEm.find( [paymentrefid:o.paymentorderno ] ).first();
         if( err ) {
+            notifySvc.send("epayment_error", [:]);
+            notifySvc.send("epayment", [:]);        
             return [status: "error", objid: err.objid, errdetail: err.errdetail, laststate: err.laststate, paymentrefid: err.paymentrefid ];
         }
         else {

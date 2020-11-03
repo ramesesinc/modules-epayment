@@ -9,6 +9,7 @@ class EORListInterceptor {
     public void getNodes( evt ) { 
         def x = evt.args[0];
         def result = evt.result;
+        result << [  title: 'Pending', state:'pending',  ];        
         result << [  title: 'Unremitted', state:'unremitted',  ];
         result << [  title: 'Remitted', state:'remitted' ];
     }
@@ -21,12 +22,19 @@ class EORListInterceptor {
 
         def m = [:]; 
         def str = null;
-        if ( o.node.state == 'unremitted' ) {
-            str = ' remittanceid is null '; 
-        } else {
-            str = ' remittanceid is not null '; 
-        } 
+        switch( o.node.state ) {
+            case 'pending':
+                str = " state = 'PENDING' ";  
+                break;
 
+            case 'unremitted':
+                str = " state = 'POSTED' AND  remittanceid IS NULL ";  
+                break;
+
+            default:
+                str = " state = 'POSTED' AND  remittanceid IS NOT NULL ";  
+                break;
+        }
         //o.debug = true;
 
         if( o.where ) {

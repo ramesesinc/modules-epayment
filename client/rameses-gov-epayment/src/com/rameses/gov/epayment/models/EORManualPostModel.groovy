@@ -43,7 +43,7 @@ public class EORManualPostModel  {
         if(!MsgBox.confirm("You are about to submit this transaction. Please confirm")) return null;
         def stat = svc.post( entity );
         if( stat.status == "error") {
-             return Inv.lookupOpener( "eor_error:view",[ entity: stat ]);
+             Modal.show( "eor_error:view",[ entity: stat ]);
         }
         else {
             MsgBox.alert("Transaction successful");

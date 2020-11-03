@@ -44,7 +44,7 @@ class EORService {
         entity.receiptno = eorNumSvc.getNextEORNumber( po.partnerid );
         entity.receiptdate = po.tracedate;
         entity.txndate = svrDate;
-        entity.state = 'POSTED';
+        entity.state = 'PENDING';
         entity.txntype = po.txntype;
         entity.txntypename = po.txntypename;
 
