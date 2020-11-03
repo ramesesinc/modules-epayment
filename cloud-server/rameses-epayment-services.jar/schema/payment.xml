@@ -14,6 +14,10 @@
 		<complex name="partner" ref="payment_partner" jointype="many-to-one" required="true">
 			<key field="paypartnerid" target="objid"/> 
 		</complex> 
+		<complex name="paymentorder" ref="paymentorder_paid" 
+			includefields="txntype" jointype="many-to-one" required="false">
+			<key field="paymentrefid" target="objid"/> 
+		</complex> 
 	</element> 
 </schema>
 

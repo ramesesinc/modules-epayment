@@ -29,8 +29,8 @@ class CloudPaymentService {
 	@Service("DateService")
 	def dateSvc;
 
-	@XConnection("gdx-mq")
-	def gdx;
+	// @XConnection("gdx-mq")
+	// def gdx;
 
 	@ProxyMethod 
 	public def createPaymentOrder( param ) {
@@ -146,12 +146,12 @@ class CloudPaymentService {
 		pay.origin = po.origin;
 		pay.txntypename = po.txntypename;
 
-		pay.action = "epayment:post-payment";
-		gdx.send( pay, orgcode );
+		// pay.action = "epayment:post-payment";
+		// gdx.send( pay, orgcode );
 
 		//This is returned to give feedback to the web page.
-		pmt.info = po;
-		return pmt;
+		pay.info = po;
+		return pay;
 	} 
 
 	//this is called back by the gdx-client. we only move the payment order if payment successful downstairs
