@@ -23,6 +23,8 @@
 	<import value="net.sf.jasperreports.engine.*" />
 	<import value="net.sf.jasperreports.engine.data.*" />
 
+	<parameter name="LGU_NAME" isForPrompting="false" class="java.lang.String"/>
+	<parameter name="OFFICE_NAME" isForPrompting="false" class="java.lang.String"/>
 
 	<field name="receiptno" class="java.lang.String"/>
 	<field name="paidby" class="java.lang.String"/>
@@ -37,8 +39,6 @@
 	<field name="item.remarks" class="java.lang.String"/>
 	<field name="items" class="java.lang.Object"/>
 	<field name="qrcode" class="java.net.URL"/>
-	<field name="reportparams.LGUFORMALNAME" class="java.lang.String"/>
-	<field name="reportparams.PARENTLGUFORMALNAME" class="java.lang.String"/>
 	<field name="receiptdate" class="java.util.Date"/>
 	<field name="paidbyaddress" class="java.lang.String"/>
 
@@ -209,28 +209,28 @@
 				<textField isStretchWithOverflow="false" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						x="90"
-						y="40"
+						y="32"
 						width="162"
 						height="18"
 						key="textField-20"/>
 					<box></box>
 					<textElement textAlignment="Center">
-						<font size="12"/>
+						<font fontName="Arial" size="9"/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[$F{reportparams.LGUFORMALNAME}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$P{LGU_NAME}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						x="90"
-						y="63"
+						y="50"
 						width="162"
 						height="18"
 						key="textField-21"/>
 					<box></box>
 					<textElement textAlignment="Center">
-						<font size="12"/>
+						<font fontName="Arial" size="9"/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[$F{reportparams.PARENTLGUFORMALNAME}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$P{OFFICE_NAME}]]></textFieldExpression>
 				</textField>
 				<image  evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -255,7 +255,7 @@
 				<staticText>
 					<reportElement
 						x="90"
-						y="16"
+						y="13"
 						width="162"
 						height="20"
 						key="staticText-54"/>
