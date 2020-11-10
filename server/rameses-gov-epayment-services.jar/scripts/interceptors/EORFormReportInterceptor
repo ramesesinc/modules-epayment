@@ -20,13 +20,8 @@ class EORFormReportInterceptor {
     @DataContext("eor")
     def eor;
 
-    def getEOR( def o ) {
-        def rct = epmtSvc.getReceipt( [objid: o.objid ] );
-        rct.qrcode = "qrcode:" + rct.receiptno;
-        rct.amountinwords = numSvc.doubleToWords( rct.amount );
-        rct.template = "reports/epayment/eor51";        
-        return rct;
-    }
+    @Service("FormReportService")
+    def formReportSvc
 
     def findPluginSvc( txntype ) {
         def p = pluginEm.find( [objid: txntype ] ).first();
@@ -44,7 +39,12 @@ class EORFormReportInterceptor {
         def result = evt.result;
         def objid = p.parameters.objid;
         if(!objid) throw new Exception("objid is required in eor report");
-        result.data = getEOR( [objid: objid ] );
+        
+        def rct = epmtSvc.getReceipt( [objid: objid ] );
+        rct.qrcode = "qrcode:" + rct.receiptno;
+        rct.amountinwords = numSvc.doubleToWords( rct.amount );
+        rct.template = "reports/epayment/eor51";        
+        result.data = rct;
     }   
 
     @Before(pattern="JasperEmailQueueService.send", eval="#{args[0].reportid == 'eor' }")
@@ -60,9 +60,11 @@ class EORFormReportInterceptor {
         def o = evt.args[0];
         def refid = o.refid;
 
-        def eor = getEOR( [objid: refid] );
+        def result = formReportSvc.getData([reportid: "eor", parameters:[objid: refid]])
+        def eor = result.data
+
         o.attachments = [
-            [ title: "EOR.pdf", reportid: "eor", data: eor ]
+            [ title:  eor.receiptno + ".pdf", reportid: "eor", data: eor ]
         ];
         o.connection = "primary-email-server";
 
