@@ -7,5 +7,5 @@
                  notificationid="epayment"
                  index="1" action="init"/>
     </invokers> 
-    <code class="com.rameses.gov.etracs.obo.models.OboFXMenuCategoryModel" />
+    <code class="com.rameses.menu.models.FXMenuCategoryModel" />
 </workunit>
