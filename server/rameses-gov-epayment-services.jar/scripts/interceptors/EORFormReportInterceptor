@@ -53,6 +53,7 @@ class EORFormReportInterceptor {
         def data = epmtSvc.getReceipt( [objid: p.refid ] );
         p.to = data.paymentorder.email;
         p.info = data;
+        o.connection = "primary-email-server";
     }
 
     @Before(pattern="JasperReportEmailService.send", eval="#{ args[0].reportid == 'eor' }", index=-10000)
@@ -66,8 +67,7 @@ class EORFormReportInterceptor {
         o.attachments = [
             [ title:  eor.receiptno + ".pdf", reportid: "eor", data: eor ]
         ];
-        o.connection = "primary-email-server";
-
+        
         try {
             def pluginSvc = findPluginSvc( eor.txntype );
             def ext = pluginSvc.getEmailAttachments( eor );

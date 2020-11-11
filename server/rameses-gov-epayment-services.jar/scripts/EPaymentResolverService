@@ -37,7 +37,7 @@ class EPaymentResolverService {
                 m._schemaname = "payment";
                 m.findBy = [ paymentrefid: err.paymentrefid  ];
                 pmt = cloudQrySvc.findFirst( m );
-                if( !pmt.receiptid ) 
+                if( !pmt ) 
                     throw new Exception("This transaction was not yet paid. " );
                 pmt.txntype = pmt.paymentorder.txntype;
             }
