@@ -242,12 +242,12 @@ class EPaymentService   {
             mm.refid = eor.objid;
             emailQueueSvc.send( mm );
             return true;
-        }
-        catch( Throwable ee ) {
-            sendError( 0, 3, eor.paymentrefid, ex );            
-            return false;
-        }
-    }
+        } 
+        catch( Throwable ee ) { 
+            sendError( 0, 3, eor.paymentrefid, ee ); 
+            return false; 
+        } 
+    } 
 
 
     @ProxyMethod(local=true)
