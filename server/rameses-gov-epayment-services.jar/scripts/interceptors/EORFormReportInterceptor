@@ -53,7 +53,7 @@ class EORFormReportInterceptor {
         def data = epmtSvc.getReceipt( [objid: p.refid ] );
         p.to = data.paymentorder.email;
         p.info = data;
-        o.connection = "primary-email-server";
+        p.connection = "primary-email-server";
     }
 
     @Before(pattern="JasperReportEmailService.send", eval="#{ args[0].reportid == 'eor' }", index=-10000)
@@ -75,7 +75,7 @@ class EORFormReportInterceptor {
                 o.attachments.addAll( ext );
             }
         }
-        catch(ignore) {
+        catch(Throwable ignore) {
             //
         }        
     } 

@@ -143,6 +143,18 @@ class EPaymentService   {
         err_db.create( err );         
     }
 
+    def toNumber( value ) {
+        try {
+            if ( value instanceof Number ) {
+                return value; 
+            }
+            return new BigDecimal(value.toString()); 
+        } 
+        catch(Throwable t) {
+            return null; 
+        }
+    }
+
     private def postEOR( def o, int laststate ) {
         if( laststate == 0 ) {
             int errstate = 0;
@@ -161,8 +173,12 @@ class EPaymentService   {
                     def df = new java.text.SimpleDateFormat("yyyy-MM-dd");
                     o.tracedate = df.parse( o.tracedate );
                 }
-                if(po.amount != o.amount) throw new Exception("Amount does not match");
-                if(po.txntype != o.txntype) throw new Exception("txntype does not match. Txntype passed is " + o.txntype );
+
+                def amt1 = toNumber( po.amount ); 
+                def amt2 = toNumber( o.amount ); 
+                if (amt1 != amt2) throw new Exception("Amount does not match");
+                
+                if (po.txntype != o.txntype) throw new Exception("txntype does not match. Txntype passed is " + o.txntype );
                 po.partnerid = o.partnerid; 
                 po.tracedate = o.tracedate; 
                 po.traceid = o.traceid;
@@ -180,7 +196,9 @@ class EPaymentService   {
                 if( bill.amount == 0 )
                     throw new Exception("There are no unpaid items for this transaction");        
 
-                if( bill.amount != o.amount )
+                amt1 = toNumber( bill.amount ); 
+                amt2 = toNumber( o.amount ); 
+                if ( amt1 != amt2 )
                     throw new Exception("Bill amount that does not match with specified amount");
 
                 def eor = eorSvc.post( po );
