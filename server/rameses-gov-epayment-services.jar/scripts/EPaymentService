@@ -76,7 +76,8 @@ class EPaymentService   {
     public def createPaymentOrder( def info ) {
         initEnv();       
 
-        if(!info.txntype) return [status:0, message:'txntype is required'];
+        if (!info.txntype) throw new Exception('txntype is required');
+        if (!info.txntypename) throw new Exception('txntypename is required');
 
         String locid = orgSvc.getRoot().code.replaceAll('-', ''); 
         info.objid =  KeyGen.generateAlphanumKey( locid.padRight( 6, "0" ), 12 );
@@ -88,7 +89,6 @@ class EPaymentService   {
         cal.setTime( info.txndate ); 
         cal.add( Calendar.HOUR, 24 ); 
         info.expirydate = new java.sql.Timestamp( cal.getTimeInMillis() ); 
-        if ( info.txntypename==null ) info.txntypename = info.txntype; 
         info.state = 'PENDING';
         def po = poEm.create( info ); 
 
@@ -143,18 +143,6 @@ class EPaymentService   {
         err_db.create( err );         
     }
 
-    def toNumber( value ) {
-        try {
-            if ( value instanceof Number ) {
-                return value; 
-            }
-            return new BigDecimal(value.toString()); 
-        } 
-        catch(Throwable t) {
-            return null; 
-        }
-    }
-
     private def postEOR( def o, int laststate ) {
         if( laststate == 0 ) {
             int errstate = 0;
@@ -173,12 +161,8 @@ class EPaymentService   {
                     def df = new java.text.SimpleDateFormat("yyyy-MM-dd");
                     o.tracedate = df.parse( o.tracedate );
                 }
-
-                def amt1 = toNumber( po.amount ); 
-                def amt2 = toNumber( o.amount ); 
-                if (amt1 != amt2) throw new Exception("Amount does not match");
-                
-                if (po.txntype != o.txntype) throw new Exception("txntype does not match. Txntype passed is " + o.txntype );
+                if(po.amount != o.amount) throw new Exception("Amount does not match");
+                if(po.txntype != o.txntype) throw new Exception("txntype does not match. Txntype passed is " + o.txntype );
                 po.partnerid = o.partnerid; 
                 po.tracedate = o.tracedate; 
                 po.traceid = o.traceid;
@@ -196,9 +180,7 @@ class EPaymentService   {
                 if( bill.amount == 0 )
                     throw new Exception("There are no unpaid items for this transaction");        
 
-                amt1 = toNumber( bill.amount ); 
-                amt2 = toNumber( o.amount ); 
-                if ( amt1 != amt2 )
+                if( bill.amount != o.amount )
                     throw new Exception("Bill amount that does not match with specified amount");
 
                 def eor = eorSvc.post( po );
