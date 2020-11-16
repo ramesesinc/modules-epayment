@@ -24,10 +24,17 @@ class LbpPaymentPartnerOptionInterceptor {
 		def webfee = (po.webfee ? po.webfee : 0.00); 
 		def samt = (po.amount ? formatter.format( po.amount ) : "");
 
+		def paidbystr = po.paidby.replaceAll('&','and'); 
+
 		def params = [:];
 		params.MerchantCode = partner.info?.merchantcode; 
 		params.MerchantRefNo = po.objid; 
-		params.Particulars = "Transaction_type=${po.txntypename};Name of Payor=${po.paidby.replaceAll('&','and')};Tax Reference Number=${po.objid};Remarks=NA".toString(); 
+		params.Particulars = "Transaction_type=${po.txntypename};Name of Payor=${paidbystr};Tax Reference Number=${po.objid};Remarks=NA".toString(); 
+
+		if ( partner.info?.particulars ) {
+			params.Particulars = evalExpr( partner.info.particulars, [ txntype: po.txntypename, paidby: paidbystr, refno: po.objid ]); 
+		}
+
 		params.Amount = samt;
 		params.PayorName = po.paidby;
 		params.PayorEmail = ( po.paidbyemail ? po.paidbyemail : '');
@@ -68,4 +75,10 @@ class LbpPaymentPartnerOptionInterceptor {
 		}
 		return data;
 	}
+
+	String evalExpr( str, data ) {
+		def engine = new groovy.text.SimpleTemplateEngine()
+		def template = engine.createTemplate( str ).make( data ); 
+		return template.toString(); 
+	} 
 }
