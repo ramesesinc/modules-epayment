@@ -1,23 +1,22 @@
 import com.rameses.annotations.*;
-import com.rameses.util.*;
-import java.rmi.server.*;
-import com.rameses.services.extended.*;
-import java.text.*;
 
 public class VerifyEmailService {
-
-	//@Service("SMSService")
-	//def smsSvc;
 
 	@Service 
 	def self;
 
-	@XConnection("primary-email-server")
-	def emailSvc;
+	@Service(dynamic=true)
+	def dynaSvc;
+
+	@XConnection(dynamic=true)
+	def dyna_xconn;
 
 	@ProxyMethod
 	public def verifyEmail( data ) { 
-		if( !data.email ) throw new Exception("Please provide an email");
+		println 'verifyEmail-> '+ data;
+
+		def recipient = (data?.email ? data.email : data?.mobileno); 
+		if ( !recipient ) throw new Exception("Please provide an email");
 
 		Random rand = new Random();
 		def otp = rand.nextInt(100000000);
@@ -26,20 +25,34 @@ public class VerifyEmailService {
 		println "generating key " + skey;
 
 		def msg = " Your 6 digit validation key is " + skey;
-		emailSvc.send([ to: data.email, subject:msg, message: msg ]);
-
-		println data;
-		//if ( data.mobileno ) { 
-		//	self.sendSMS([ phoneno: data.mobileno, message: msg ]);  
-		//} 
+		if ( data.email ) {
+			self.sendMail([ to: data.email, subject:msg, message: msg ]); 
+		}
+		
+		if ( data.mobileno ) { 
+			self.sendSMS([ phoneno: data.mobileno, message: msg ]);  
+		} 
 
 		return [ key: skey ];
 	}
 
+
 	@Async
-	@ProxyMethod 
+	@ProxyMethod(local=true)
+	public void sendMail( data ) { 
+		def mailConn = dyna_xconn.lookup('primary-email-server'); 
+		mailConn.send( data ); 
+	}	
+
+	@Async
+	@ProxyMethod(local=true)
 	public void sendSMS( m ) {
-		println "sending sms " + m;
-		//smsSvc.send([ phoneno: m.phoneno, message: m.message ]);  
+		def svc = dynaSvc.lookup('SMSService'); 
+		if ( svc ) {
+			svc.send([ phoneno: m.phoneno, message: m.message ]);  	
+		}
+		else {
+			println 'SMSService cannot be found. Please verify.'; 
+		}
 	}
 }
