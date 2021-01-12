@@ -24,7 +24,8 @@ public class EORRemittanceModel extends CrudFormModel {
     def eorListHandler = [
         fetchList: { o->
             def m = [_schemaname: 'eor'];
-            m.findBy = [remittanceid: entity.objid ];
+            m.findBy = [ remittanceid: entity.objid ];
+            m.orderBy = "receiptdate, tracedate"; 
             return queryService.getList( m );
         },
         onOpenItem: {o,col->
@@ -70,8 +71,10 @@ public class EORRemittanceModel extends CrudFormModel {
             svc.updateBankAccount([ objid: selectedFund.objid, bankaccount: o ]); 
             fundListHandler.reload(); 
         }
+        
         def op = Inv.lookupOpener('bankaccount:lookup', p );
         op.target = 'popup';
+        op.properties.width = 800;
         return op;
         
     }

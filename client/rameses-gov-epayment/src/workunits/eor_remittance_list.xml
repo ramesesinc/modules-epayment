@@ -1,11 +1,16 @@
-<workunit extends="com/rameses/seti2/templates/CrudNodeList.xml" schemaName="eor_remittance">
+<workunit extends="com/rameses/seti2/templates/CrudNodeList.xml" 
+          schemaName="eor_remittance" allowCreate="false" allowDelete="false">
     <invokers>
-        <invoker folderid="menucategory/epayment/txn" role="MASTER" 
-            cols="controlno,controldate,partnerid,amount,state"
-            caption="View EOR Remittances" 
-            action="init"
-            index="3"
-            formTitle="EOR Remittances" />
-      
+        <invoker folderid="menucategory/epayment/txn" 
+                 caption="View EOR Remittances" action="init" 
+                 formTitle="EOR Remittances" index="3" role="MASTER" 
+                 cols="controlno,controldate,amount,state,dtcreated,createdby.name,partnerid,dtposted,postedby.name" 
+                 allowDelete="#{entity?.state == 'DRAFT'}" />
    </invokers>
+   
+   <code class="com.rameses.gov.epayment.models.EORRemittanceListModel"/>
+   
+  <pages>
+    <page name="queryForm" template="com.rameses.gov.epayment.views.EORRemittanceListlQueryPanel"/>
+  </pages>   
 </workunit>

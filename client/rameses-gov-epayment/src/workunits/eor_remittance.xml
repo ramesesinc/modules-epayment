@@ -1,12 +1,18 @@
-<workunit extends="com/rameses/seti2/templates/CrudForm.xml" schemaName="eor_remittance">
+<workunit extends="com/rameses/seti2/templates/CrudForm.xml" 
+          schemaName="eor_remittance">
     <invokers>
         <invoker type="eor_remittance:open" 
                  caption="EOR Remittance" action="open" 
                  formTitle="EOR Remittance" /> 
+
+        <invoker type="formActions" mnemonic="C" 
+                 caption="Close" action="_close" />
+                
+        <invoker type="formActions" mnemonic="P" 
+                 caption="Post" action="post" 
+                 visibleWhen="#{entity.state != 'POSTED'}"/>
         
-        <invoker type="formActions" caption="Post" action="post" visibleWhen="#{entity.state != 'POSTED'}"/>
-        
-        <invoker type="formActions" 
+        <invoker type="formActions" mnemonic="R" 
                  caption="Reports" action="listReports" 
                  visibleWhen="#{entity.state == 'POSTED'}"
                  category="eor_remittance:reports" />

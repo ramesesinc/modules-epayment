@@ -165,7 +165,7 @@ public class EORRemittancePage extends javax.swing.JPanel {
 
         jPanel2.add(jPanel3, java.awt.BorderLayout.SOUTH);
 
-        xTabbedPane1.addTab("  Fund Summary     ", jPanel2);
+        xTabbedPane1.addTab("   Fund Summary          ", jPanel2);
 
         jPanel1.setBorder(javax.swing.BorderFactory.createEmptyBorder(10, 10, 10, 10));
         jPanel1.setLayout(new java.awt.BorderLayout());
@@ -174,10 +174,10 @@ public class EORRemittancePage extends javax.swing.JPanel {
         xDataTable1.setColumns(new com.rameses.rcp.common.Column[]{
             new com.rameses.rcp.common.Column(new Object[]{
                 new Object[]{"name", "receiptno"}
-                , new Object[]{"caption", "EOR No"}
-                , new Object[]{"width", 100}
+                , new Object[]{"caption", "Receipt No."}
+                , new Object[]{"width", 150}
                 , new Object[]{"minWidth", 0}
-                , new Object[]{"maxWidth", 120}
+                , new Object[]{"maxWidth", 150}
                 , new Object[]{"required", false}
                 , new Object[]{"resizable", true}
                 , new Object[]{"nullWhenEmpty", true}
@@ -192,19 +192,20 @@ public class EORRemittancePage extends javax.swing.JPanel {
                 , new Object[]{"caption", "Receipt Date"}
                 , new Object[]{"width", 100}
                 , new Object[]{"minWidth", 0}
-                , new Object[]{"maxWidth", 120}
+                , new Object[]{"maxWidth", 100}
                 , new Object[]{"required", false}
                 , new Object[]{"resizable", true}
                 , new Object[]{"nullWhenEmpty", true}
                 , new Object[]{"editable", false}
                 , new Object[]{"visible", true}
                 , new Object[]{"visibleWhen", null}
+                , new Object[]{"alignment", "CENTER"}
                 , new Object[]{"textCase", com.rameses.rcp.constant.TextCase.NONE}
-                , new Object[]{"typeHandler", new com.rameses.rcp.common.TextColumnHandler()}
+                , new Object[]{"typeHandler", new com.rameses.rcp.common.DateColumnHandler(null, "yyyy-MM-dd", null)}
             }),
             new com.rameses.rcp.common.Column(new Object[]{
                 new Object[]{"name", "paidby"}
-                , new Object[]{"caption", "Paid By Name"}
+                , new Object[]{"caption", "Paid By"}
                 , new Object[]{"width", 100}
                 , new Object[]{"minWidth", 0}
                 , new Object[]{"maxWidth", 0}
@@ -229,15 +230,16 @@ public class EORRemittancePage extends javax.swing.JPanel {
                 , new Object[]{"editable", false}
                 , new Object[]{"visible", true}
                 , new Object[]{"visibleWhen", null}
+                , new Object[]{"alignment", "RIGHT"}
                 , new Object[]{"textCase", com.rameses.rcp.constant.TextCase.NONE}
                 , new Object[]{"typeHandler", new com.rameses.rcp.common.DecimalColumnHandler("#,##0.00", -1.0, -1.0, false, 2)}
             }),
             new com.rameses.rcp.common.Column(new Object[]{
                 new Object[]{"name", "traceid"}
                 , new Object[]{"caption", "Trace ID"}
-                , new Object[]{"width", 100}
+                , new Object[]{"width", 150}
                 , new Object[]{"minWidth", 0}
-                , new Object[]{"maxWidth", 200}
+                , new Object[]{"maxWidth", 0}
                 , new Object[]{"required", false}
                 , new Object[]{"resizable", true}
                 , new Object[]{"nullWhenEmpty", true}
@@ -250,9 +252,9 @@ public class EORRemittancePage extends javax.swing.JPanel {
             new com.rameses.rcp.common.Column(new Object[]{
                 new Object[]{"name", "tracedate"}
                 , new Object[]{"caption", "Trace Date"}
-                , new Object[]{"width", 100}
+                , new Object[]{"width", 140}
                 , new Object[]{"minWidth", 0}
-                , new Object[]{"maxWidth", 120}
+                , new Object[]{"maxWidth", 140}
                 , new Object[]{"required", false}
                 , new Object[]{"resizable", true}
                 , new Object[]{"nullWhenEmpty", true}
@@ -260,7 +262,7 @@ public class EORRemittancePage extends javax.swing.JPanel {
                 , new Object[]{"visible", true}
                 , new Object[]{"visibleWhen", null}
                 , new Object[]{"textCase", com.rameses.rcp.constant.TextCase.NONE}
-                , new Object[]{"typeHandler", new com.rameses.rcp.common.TextColumnHandler()}
+                , new Object[]{"typeHandler", new com.rameses.rcp.common.DateColumnHandler(null, "yyyy-MM-dd HH:mm:ss", null)}
             }),
             new com.rameses.rcp.common.Column(new Object[]{
                 new Object[]{"name", "remarks"}
@@ -280,7 +282,7 @@ public class EORRemittancePage extends javax.swing.JPanel {
         });
         jPanel1.add(xDataTable1, java.awt.BorderLayout.CENTER);
 
-        xTabbedPane1.addTab("   EOR List     ", jPanel1);
+        xTabbedPane1.addTab("   Receipts          ", jPanel1);
 
         xFormPanel1.setCaptionVAlignment(com.rameses.rcp.constant.UIConstants.CENTER);
         xFormPanel1.setCaptionWidth(100);
