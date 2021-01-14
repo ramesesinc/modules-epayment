@@ -60,6 +60,8 @@ class PayMayaPaymentPartnerOptionInterceptor {
 		def urlPath = partner.actionurl
 		def jsonData = JsonUtil.toString(partner.params)
 
+		System.setProperty("https.protocols", "TLSv1,TLSv1.1,TLSv1.2"); 
+
 		def http = new BasicHttpClient()
 		def retval = http.post(urlPath, jsonData, partner.info.headerpost)
 		if (retval.responsecode == 200) {

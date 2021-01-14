@@ -29,8 +29,8 @@ class CloudPaymentService {
 	@Service("DateService")
 	def dateSvc;
 
-	// @XConnection("gdx-mq")
-	// def gdx;
+	@XConnection("gdx-mq")
+	def gdx;
 
 	@ProxyMethod 
 	public def createPaymentOrder( param ) {
@@ -86,6 +86,11 @@ class CloudPaymentService {
 
 	@ProxyMethod
 	public def postPartnerPayment(params) {
+		println '\n** postPartnerPayment -> ';
+		params.each{
+			println '> '+ it; 
+		}
+
 		if (!params.paypartnerid) throw new Exception("paypartnerid is required.");
 		if (!params.paymentrefid) throw new Exception("paymentrefid is required.");
 
@@ -101,10 +106,20 @@ class CloudPaymentService {
 
 	@ProxyMethod 
 	public def postPayment( def parms ) {
+		println '\n** postPayment -> ';
+		parms.each{
+			println '> '+ it; 
+		}
+
 		if ( !parms.paypartnerid ) throw new Exception("paypartnerid is required in postPayment"); 
 		if ( !parms.paymentrefid ) throw new Exception("paymentrefid is required in postPayment"); 
 
+		po_db.debug = true;
 		def po = po_db.find([ objid: parms.paymentrefid ]).first(); 
+		println '\n** po '
+		po.each{
+			println '> '+ it; 
+		}
 		if ( !po?.objid ) throw new Exception("'"+ parms.paymentrefid +"' payment order not found"); 
 
 		//call params here. must intercept
@@ -117,6 +132,10 @@ class CloudPaymentService {
 		if ( partInfo?.info ) payPartner.info.putAll( partInfo.info ); 
 
 		parms.paypartner = payPartner;
+		println '\n** getPostPaymentParams -> ';
+		parms.each{
+			println '> '+ it; 
+		}
 
 		def pmt = self.getPostPaymentParams( parms ); 
 		if ( !pmt ) throw new Exception("Error in post payment. Parameters passed in posting payment must not be empty"); 
@@ -131,10 +150,13 @@ class CloudPaymentService {
 			po.particulars = po.txntypename;
 		}
 
+		println '** transfer to po paid table...';
 		//transfer to paymentorder_paid 
 		po_paid_db.create( po );
+		println '** delete po...';
 		po_db.find([ objid: po.objid ]).delete();
 
+		println '** create payment...';
 		//we use partnerid to refer to pay partner so as not to disrupt existing code in the lgu.
 		def pay = pay_db.create( pmt );
 
@@ -146,12 +168,16 @@ class CloudPaymentService {
 		pay.origin = po.origin;
 		pay.txntypename = po.txntypename;
 
-		// pay.action = "epayment:post-payment";
-		// gdx.send( pay, orgcode );
+		pay.action = "epayment:post-payment";
+		println '\n** gdx.send '
+		pay.each{
+			println '> '+ it; 
+		} 
+		gdx.send( pay, orgcode );
 
 		//This is returned to give feedback to the web page.
-		pay.info = po;
-		return pay;
+		pmt.info = po;
+		return pmt;
 	} 
 
 	//this is called back by the gdx-client. we only move the payment order if payment successful downstairs
