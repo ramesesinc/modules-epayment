@@ -15,7 +15,32 @@ class EORPaymentOrderListInterceptor {
 		def param = evt.args[0];
 		if ( !param.node?.id ) return;
 
-		def orderbys = ['txndate'];
+        def wheres = []; 
+        def wheremap = [:]; 
+        if ( param.searchtext ) {
+        	if ( param.searchtext.toString().indexOf('%') < 0 ) { 
+        		param.searchtext = param.searchtext.toString() +'%'; 
+        	}
+
+            wheremap.searchtext = param.searchtext; 
+            wheres << "(objid LIKE :searchtext OR controlno LIKE :searchtext OR paidby LIKE :searchtext)"
+        } 
+
+        if ( param.where ) {
+            wheres << param.where[0]; 
+            wheremap.putAll( param.where[1] ); 
+        }
+
+        param.where = [wheres.join(" AND "), wheremap]; 
+
+		def orderbys = [];
+		if ( param.node.id == 'UNRESOLVED' ) {
+			orderbys << 'txndate DESC'; 
+		} 
+		else {
+			orderbys << 'txndate'; 
+		}
+
 		if ( param.orderBy ) orderbys << param.orderBy; 
 
 		param.orderBy = orderbys.join(', '); 

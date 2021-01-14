@@ -46,6 +46,8 @@ class EORRemittanceService {
         if ( pp.amount <= 0 )
             throw new Exception("Amount to remit must be greater than 0.0 ");
 
+        pp.partner = paymentpartner.find([ objid: pp.partnerid.toString() ]).select('objid,code,name').first(); 
+
         def m = [ state: "DRAFT" ]; 
         m.dtcreated = dateSvc.getServerDate();
         m.controlno = 'TMP-REM-'+ env.USERID;
@@ -91,7 +93,8 @@ class EORRemittanceService {
         if ( m.amount != rftotal ) 
             throw new Exception("Total remittance fund does not matched with the remitted amount"); 
 
-        return m;
+        m.partner = pp.partner; 
+        return m; 
     }
 
     @ProxyMethod
@@ -143,5 +146,4 @@ class EORRemittanceService {
     public def getPaymentPartners() {
         return paymentpartner.where('1=1').list(); 
     } 
-
 }

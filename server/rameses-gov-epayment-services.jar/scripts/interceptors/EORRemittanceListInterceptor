@@ -3,14 +3,15 @@ import com.rameses.annotations.*
 class EORRemittanceListInterceptor {
 
     @After(pattern="QueryService.getNodeList", eval="#{ args[0]._schemaname == 'eor_remittance' }")
-    public void getNodes( evt ) { 
+    public void afterGetNodeList( evt ) { 
         def result = evt.result;
         result << [  title: 'Draft', state: 'DRAFT' ];
         result << [  title: 'Posted', state: 'POSTED' ];
+        result << [  title: 'Cancelled', state: 'CANCELLED' ];
     }
 
     @Before(pattern="QueryService.getList", eval="#{ args[0]._schemaname == 'eor_remittance' }")
-    public void loadList(def evt) {
+    public void beforeGetList( evt ) {
         def o = evt.args[0];
 
         if ( !o.node?.state ) return;
@@ -33,12 +34,12 @@ class EORRemittanceListInterceptor {
         o.where = [wheres.join(" AND "), wheremap]; 
 
         def orderbys = []; 
-        if ( o.node.state == 'POSTED' ) {
-            orderbys << "controldate DESC, dtcreated DESC";
-        } 
-        else {
+        if ( o.node.state.toString().toUpperCase() == 'DRAFT' ) {
             orderbys << "controldate, dtcreated";
         }
+        else {
+            orderbys << "controldate DESC, dtcreated DESC";
+        } 
         
         if ( o.orderBy ) orderbys << o.orderBy; 
 

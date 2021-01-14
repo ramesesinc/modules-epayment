@@ -1,0 +1,12 @@
+<workunit>
+    <invokers>
+        <invoker type="eor_paymentorder:resolve" 
+                 caption="EOR Payment Order Resolver" action="init" /> 
+    </invokers>
+
+    <code class="com.rameses.gov.epayment.models.EORPaymentOrderResolverModel" />
+
+    <pages>
+        <page template="com.rameses.gov.epayment.views.EORPaymentOrderResolverPage" />
+    </pages>
+</workunit>

@@ -276,8 +276,6 @@ class EPaymentService   {
         def eor = postEOR( o, laststate );
         if(!eor) return null;
 
-        //def updated = updateCloudPayment( eor, laststate );
-        //if( !updated ) return null;
         eorEm.find( [objid: eor.objid] ).update( [state: "POSTED"] );
 
         emailPayment( eor );
