@@ -1,50 +1,59 @@
 import com.rameses.annotations.*
-import com.rameses.util.*
-import com.rameses.common.*
-import treasury.utils.*;
 
 class EORListInterceptor {
 
     @After(pattern="QueryService.getNodeList", eval="#{ args[0]._schemaname == 'eor' }")
-    public void getNodes( evt ) { 
+    public void afterGetNodeList( evt ) { 
         def x = evt.args[0];
         def result = evt.result;
-        result << [  title: 'Pending', state:'pending',  ];        
-        result << [  title: 'Unremitted', state:'unremitted',  ];
+        result << [  title: 'Pending', state:'pending' ];        
+        result << [  title: 'Unremitted', state:'unremitted' ];
         result << [  title: 'Remitted', state:'remitted' ];
     }
 
     @Before(pattern="QueryService.getList", eval="#{ args[0]._schemaname == 'eor' }")
-    public void loadList(def evt) {
+    public void beforeGetList( evt ) {
         def o = evt.args[0];
+        if ( !o.node?.state ) return;
 
-        if( !o.node?.state ) return;
+        def wheres = [];
+        def wheremap = [state: 'PENDING']; 
+        def orderbys = []; 
 
-        def m = [:]; 
-        def str = null;
         switch( o.node.state ) {
             case 'pending':
-                str = " state = 'PENDING' ";  
+                wheres << 'state = :state'; 
+                wheremap.state = 'PENDING';  
+                orderbys << 'receiptdate, txndate'; 
                 break;
 
             case 'unremitted':
-                str = " state = 'POSTED' AND  remittanceid IS NULL ";  
+                wheres << 'state = :state AND remittanceid IS NULL'; 
+                wheremap.state = 'POSTED';  
+                orderbys << 'receiptdate, txndate'; 
                 break;
 
-            default:
-                str = " state = 'POSTED' AND  remittanceid IS NOT NULL ";  
+            case 'remitted':
+                wheres << 'state = :state AND remittanceid IS NOT NULL'; 
+                wheremap.state = 'POSTED';  
+                orderbys << 'receiptdate DESC, txndate DESC'; 
                 break;
-        }
-        //o.debug = true;
 
-        if( o.where ) {
-            o.where[0] = str + " AND " + o.where[0];    
-            o.where[1].putAll( m );
+            default: break;
         }
-        else {
-            o.where = [str, m];
+        
+        if ( o.where ) { 
+            wheres << o.where[0]; 
+            o.where[0] = wheres.join(' AND '); 
+            o.where[1].putAll( wheremap ); 
         } 
-    }   
+        else { 
+            o.where = [wheres.join(' AND '), wheremap]; 
+        } 
 
-
+        if ( o.orderBy ) {
+            orderbys << o.orderBy;
+        }
+        o.orderBy = orderbys.join(', '); 
+    } 
 }

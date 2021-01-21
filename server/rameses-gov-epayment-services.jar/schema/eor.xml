@@ -3,11 +3,11 @@
 		<field name="objid" primary="true" prefix="EOR"/>
 		<field name="receiptno" required="true" caption="Receipt No" searchable="true" />
 		<field name="receiptdate" required="true" type="date" caption="Receipt Date" indexed="true"/>
-		<field name="txndate" required="true" type="timestamp"/>
-		<field name="state" required="true"/>
-		<field name="partnerid" required="true"/>
+		<field name="txndate" required="true" type="timestamp" caption="TxnDate"/>
+		<field name="state" required="true" caption="State"/>
+		<field name="partnerid" required="true" caption="PartnerId"/>
 		<field name="txntype" required="true" caption="Txn Type"/>
-		<field name="traceid" required="true" caption="Trace No" indexed="true"/>
+		<field name="traceid" required="true" caption="Trace No" indexed="true" searchable="true"/>
 		<field name="tracedate" required="true" caption="Trace Date"/>
 		<field name="refid" />
 		<field name="paidby" required="true" caption="Paid By" indexed="true" searchable="true"/>
@@ -15,7 +15,7 @@
 		<field name="payer_objid" />
 		<!-- filipizen or kiosk -->
 		<field name="paymethod" required="true"  caption="Pay Method" />
-		<field name="paymentrefid" required="true" caption="Pay Ref" searchable="true"/>
+		<field name="paymentrefid" required="true" caption="PayOrderNo." searchable="true"/>
 		<field name="remittanceid" />
 		<field name="remarks" required="true"/>
 		<field name="amount" required="true" type="decimal"  caption="Amount" />
