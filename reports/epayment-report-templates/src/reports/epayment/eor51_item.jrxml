@@ -29,6 +29,10 @@
 	<field name="amount" class="java.lang.Number"/>
 	<field name="remarks" class="java.lang.String"/>
 
+	<variable name="amount" class="java.lang.Number" resetType="Report" calculation="Sum">
+		<variableExpression><![CDATA[($F{amount} ? $F{amount} : 0.0)]]></variableExpression>
+		<initialValueExpression><![CDATA[0.0]]></initialValueExpression>
+	</variable>
 		<background>
 			<band height="0"  isSplitAllowed="true" >
 			</band>
@@ -42,7 +46,7 @@
 			</band>
 		</pageHeader>
 		<columnHeader>
-			<band height="23"  isSplitAllowed="true" >
+			<band height="28"  isSplitAllowed="true" >
 				<staticText>
 					<reportElement
 						x="399"
@@ -90,30 +94,30 @@
 			</band>
 		</columnHeader>
 		<detail>
-			<band height="15"  isSplitAllowed="true" >
+			<band height="16"  isSplitAllowed="true" >
 				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						x="10"
+						x="13"
 						y="0"
-						width="370"
-						height="15"
+						width="385"
+						height="16"
 						key="textField-1"/>
-					<box></box>
-					<textElement lineSpacing="Single">
+					<box rightPadding="5"></box>
+					<textElement verticalAlignment="Top" lineSpacing="Single">
 						<font size="10"/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[$F{item.title} + ($F{remarks}? " ("+$F{remarks}+")" :"")]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$F{item.title} + ($F{remarks} ? (" ("+ $F{remarks} +")") :"")]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" pattern="#,##0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						x="399"
 						y="0"
 						width="102"
-						height="15"
+						height="16"
 						key="textField-3"/>
 					<box>					<leftPen lineWidth="0.0" lineStyle="Solid"/>
 </box>
-					<textElement textAlignment="Right">
+					<textElement textAlignment="Right" verticalAlignment="Top">
 						<font size="10"/>
 					</textElement>
 				<textFieldExpression   class="java.lang.Number"><![CDATA[$F{amount}]]></textFieldExpression>
@@ -121,7 +125,33 @@
 			</band>
 		</detail>
 		<columnFooter>
-			<band height="0"  isSplitAllowed="true" >
+			<band height="45"  isSplitAllowed="true" >
+				<staticText>
+					<reportElement
+						x="278"
+						y="15"
+						width="102"
+						height="25"
+						key="staticText-4"/>
+					<box></box>
+					<textElement verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" isBold="true"/>
+					</textElement>
+				<text><![CDATA[Total Payment >>]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="false" pattern="#,##0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="379"
+						y="15"
+						width="122"
+						height="25"
+						key="textField-4"/>
+					<box></box>
+					<textElement textAlignment="Right" verticalAlignment="Middle">
+						<font pdfFontName="Helvetica-Bold" size="11" isBold="true"/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Number"><![CDATA[$V{amount}]]></textFieldExpression>
+				</textField>
 			</band>
 		</columnFooter>
 		<pageFooter>
