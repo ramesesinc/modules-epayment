@@ -146,4 +146,11 @@ class EORRemittanceService {
     public def getPaymentPartners() {
         return paymentpartner.where('1=1').list(); 
     } 
+
+
+    @ProxyMethod
+    public def findFund( param ) { 
+        if ( !param.objid ) return null; 
+        return etracsPersistenceSvc.read([ _schemaname: 'fund', objid: param.objid ]); 
+    } 
 }
