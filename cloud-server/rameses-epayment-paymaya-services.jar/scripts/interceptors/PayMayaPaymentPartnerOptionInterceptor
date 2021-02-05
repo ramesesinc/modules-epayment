@@ -60,6 +60,8 @@ class PayMayaPaymentPartnerOptionInterceptor {
 		def urlPath = partner.actionurl
 		def jsonData = JsonUtil.toString(partner.params)
 
+		System.setProperty("https.protocols", "TLSv1,TLSv1.1,TLSv1.2"); 
+
 		def http = new BasicHttpClient()
 		def retval = http.post(urlPath, jsonData, partner.info.headerpost)
 		if (retval.responsecode == 200) {
@@ -67,6 +69,7 @@ class PayMayaPaymentPartnerOptionInterceptor {
 			em_po.find([objid: po.objid]).update([checkoutid: partner.checkout.checkoutId])
 		} else {
 			partner.error = JsonUtil.toMap(retval.error)
+			partner.error.errormsg = partner.error.error
 		}
 	}
 
@@ -74,15 +77,6 @@ class PayMayaPaymentPartnerOptionInterceptor {
 		def po = em_po.select("checkoutid").find([ objid: args.paymentrefid ]).first()
 		def urlPath = partner.actionurl + "/" + po.checkoutid
 		return [requestReferenceNumber: args.paymentrefid];
-		//TODO: 
-		// def http = new BasicHttpClient()
-		// def retval = http.get(urlPath, null, partner.info.headerget)
-		// println "retval => " + retval;
-		// if (retval.responsecode == 200) {
-		// 	return retval.data
-		// } else {
-		// 	throw new Exception(retval.error)
-		// }
 	}
 
 	def getTotalAmount(po) {

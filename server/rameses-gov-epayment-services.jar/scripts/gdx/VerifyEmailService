@@ -17,7 +17,7 @@ public class VerifyEmailService {
 
 	@ProxyMethod
 	public def verifyEmail( data ) { 
-		if( !data.email ) throw new Exception("Please provide an email");
+		if( !data.email && !data.mobileno) throw new Exception("Please provide an email or mobile no.");
 
 		Random rand = new Random();
 		def otp = rand.nextInt(100000000);
@@ -26,16 +26,25 @@ public class VerifyEmailService {
 		println "generating key " + skey;
 
 		def msg = " Your 6 digit validation key is " + skey;
-		emailSvc.send([ to: data.email, subject:msg, message: msg ]);
+
+		if (data.email) {
+			self.sendEmail([ to: data.email, subject:msg, message: msg ]);
+		}
+
+		if ( data.mobileno ) { 
+			self.sendSMS([ phoneno: data.mobileno, message: msg ]);  
+		} 
 
 		println data;
-		//if ( data.mobileno ) { 
-		//	self.sendSMS([ phoneno: data.mobileno, message: msg ]);  
-		//} 
-
 		return [ key: skey ];
 	}
 
+	@Async
+	@ProxyMethod 
+	public void sendEmail( m ) {
+		emailSvc.send(m);
+	}
+	
 	@Async
 	@ProxyMethod 
 	public void sendSMS( m ) {
