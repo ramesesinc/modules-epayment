@@ -24,7 +24,8 @@ public class EORRemittanceModel extends CrudFormModel {
     def eorListHandler = [
         fetchList: { o->
             def m = [_schemaname: 'eor'];
-            m.findBy = [remittanceid: entity.objid ];
+            m.findBy = [ remittanceid: entity.objid ];
+            m.orderBy = "receiptdate, tracedate"; 
             return queryService.getList( m );
         },
         onOpenItem: {o,col->
@@ -64,14 +65,21 @@ public class EORRemittanceModel extends CrudFormModel {
     def assignBankAccount() { 
         if ( !selectedFund ) throw new Exception('Please select fund'); 
         
+        def selFund = selectedFund.fund; 
+        def oFund = svc.findFund( selFund ); 
+        if ( !oFund?.objid ) 
+            throw new Exception("findFund failed for '"+ selFund.objid +"'");             
+            
         def p = [:]; 
-        p.fundid = selectedFund.fund.objid; 
+        p.fundid = (oFund.depositoryfundid ? oFund.depositoryfundid : oFund.objid); 
         p.onselect = { o-> 
             svc.updateBankAccount([ objid: selectedFund.objid, bankaccount: o ]); 
             fundListHandler.reload(); 
         }
+        
         def op = Inv.lookupOpener('bankaccount:lookup', p );
         op.target = 'popup';
+        op.properties.width = 800;
         return op;
         
     }

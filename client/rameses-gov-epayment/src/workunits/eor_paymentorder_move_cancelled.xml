@@ -1,0 +1,12 @@
+<workunit>
+    <invokers>
+        <invoker type="eor_paymentorder:cancel" 
+                 caption="EOR Payment Order: Cancellation" action="init" /> 
+    </invokers>
+
+    <code class="com.rameses.gov.epayment.models.EORPaymentOrderCancelModel" />
+
+    <pages>
+        <page template="com.rameses.gov.epayment.views.EORPaymentOrderCancelPage" />
+    </pages>
+</workunit>

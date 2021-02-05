@@ -1,36 +1,48 @@
 import com.rameses.annotations.*
-import com.rameses.util.*
-import com.rameses.common.*
-import treasury.utils.*;
 
 class EORRemittanceListInterceptor {
 
     @After(pattern="QueryService.getNodeList", eval="#{ args[0]._schemaname == 'eor_remittance' }")
-    public void getNodes( evt ) { 
-        def x = evt.args[0];
+    public void afterGetNodeList( evt ) { 
         def result = evt.result;
-        result << [  title: 'Draft', state:'DRAFT' ];
-        result << [  title: 'Unremitted', state:'OPEN' ];
-        result << [  title: 'Posted', state:'POSTED' ];
+        result << [  title: 'Draft', state: 'DRAFT' ];
+        result << [  title: 'Posted', state: 'POSTED' ];
+        result << [  title: 'Cancelled', state: 'CANCELLED' ];
     }
 
     @Before(pattern="QueryService.getList", eval="#{ args[0]._schemaname == 'eor_remittance' }")
-    public void loadList(def evt) {
+    public void beforeGetList( evt ) {
         def o = evt.args[0];
 
-        if( !o.node?.state ) return;
-        //o.debug = true;
-        def str = " state = :state";
-        def m = [state: o.node.state ]; 
+        if ( !o.node?.state ) return;
 
-        if( o.where ) {
-            o.where[0] = str + " AND " + o.where[0];    
-            o.where[1].putAll( m );
+        def wheres = []; 
+        def wheremap = [:]; 
+        if ( o.partnerid ) {
+            wheres << "partnerid = :partnerid";
+            wheremap.partnerid = o.partnerid; 
+        } 
+
+        wheres << "state = :state"; 
+        wheremap.state =  o.node.state; 
+
+        if ( o.where ) {
+            wheres << o.where[0]; 
+            wheremap.putAll( o.where[1] ); 
+        }
+
+        o.where = [wheres.join(" AND "), wheremap]; 
+
+        def orderbys = []; 
+        if ( o.node.state.toString().toUpperCase() == 'DRAFT' ) {
+            orderbys << "controldate, dtcreated";
         }
         else {
-            o.where = [str, m];
+            orderbys << "controldate DESC, dtcreated DESC";
         } 
-    }   
+        
+        if ( o.orderBy ) orderbys << o.orderBy; 
 
-
+        o.orderBy = orderbys.findAll{( it )}.join(", "); 
+    } 
 }
