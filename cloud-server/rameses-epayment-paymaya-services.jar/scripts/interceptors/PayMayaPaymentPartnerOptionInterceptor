@@ -11,8 +11,14 @@ class PayMayaPaymentPartnerOptionInterceptor {
 	@DataContext('paymentorder')
 	def em_po
 
+	@DataContext('paymentorder_paid')
+	def em_po_paid
+
 	@DataContext('payment_partner')
 	def em_paymentpartner;
+
+	@Service('CloudPaymentService')
+	def svc;
 
 
 	@Before(pattern="CloudPaymentService.postPartnerPayment", eval="#{args[0].statusid == 'paymayasuccess' }")
@@ -55,6 +61,37 @@ class PayMayaPaymentPartnerOptionInterceptor {
 		pmt.amount = po.amount
 		pmt.paymentrefid = params.paymentrefid
 	} 	
+
+	@After(pattern="CloudPaymentService.postPartnerWebhook", eval="#{args[0].paypartnerid.equalsIgnoreCase('paymaya')}")
+	public void afterPostPartnerWebhook(evt) { 
+		def args = evt.args[0];
+		def result = evt.result;
+		def checkout = args.data;
+		def paymentorderid = checkout.requestReferenceNumber;
+
+		//is po paid 
+		def paidpo = em_po_paid.find([objid: paymentorderid]).first();
+		if (paidpo) {
+			result.status = 200;
+			println 'WEBHOOK [INFO] transaction already posted'
+			return;
+		};
+
+		//is valid po
+		def po = em_po.find([objid: paymentorderid]).first();
+		if (po) {
+			def params = [:]
+			params.statusid = 'paymayasuccess';
+			params.paymentrefid = checkout.requestReferenceNumber;
+			params.paypartnerid = 'PAYMAYA';
+			svc.postPartnerPayment(params);
+			println 'WEBHOOK [INFO] post partner payment completed.'
+		} else {
+			//invalid po
+			result.status = 204;
+			println 'WEBHOOK [INFO] invalid transaction'
+		}
+	}
 
 	void checkOut(partner, po) {
 		def urlPath = partner.actionurl
