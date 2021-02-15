@@ -67,7 +67,15 @@ class PayMayaPaymentPartnerOptionInterceptor {
 		def args = evt.args[0];
 		def result = evt.result;
 		def checkout = args.data;
+
 		def paymentorderid = checkout.requestReferenceNumber;
+
+		// unsuccessful payment, log and return 200
+		if (checkout.paymentStatus != "PAYMENT_SUCCESS") {
+			result.status = 200;
+			println 'WEBHOOK [INFO] unsuccessful payment: ' + paymentorderid + ': ' + checkout.paymentStatus;
+			return;
+		}
 
 		//is po paid 
 		def paidpo = em_po_paid.find([objid: paymentorderid]).first();
