@@ -96,7 +96,7 @@ class PayMayaPaymentPartnerOptionInterceptor {
 			println 'WEBHOOK [INFO] post partner payment completed.'
 		} else {
 			//invalid po
-			result.status = 204;
+			result.status = 200;
 			println 'WEBHOOK [INFO] invalid transaction'
 		}
 	}
