@@ -230,4 +230,12 @@ class CloudPaymentService {
 		return pay_db.getUnpostedPaymentList([orgcode: o.orgcode]);
 	}
 
+	@ProxyMethod
+	public def postPartnerWebhook(params) {
+		return [
+			paypartnerid: params.paypartnerid,
+			status: 200,
+		];
+	}
+
 } 
