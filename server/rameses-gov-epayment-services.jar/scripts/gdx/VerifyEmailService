@@ -33,7 +33,6 @@ public class VerifyEmailService {
 			self.sendSMS([ phoneno: data.mobileno, message: msg ]);  
 		} 
 
-		println data;
 		return [ key: skey ];
 	}
 

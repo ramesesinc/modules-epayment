@@ -97,7 +97,6 @@ class EPaymentService   {
         po.origin = info.origin;
 
         //execute creation of payment order in cloud
-        println 'creating cloud po now.....'
         cloudSvc.createPaymentOrder( po );
 
         //activate the state. activated means it is actually updated in the cloud.
