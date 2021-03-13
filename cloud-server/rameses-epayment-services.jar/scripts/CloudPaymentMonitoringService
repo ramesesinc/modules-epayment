@@ -1,0 +1,171 @@
+import com.rameses.annotations.*;
+
+class CloudPaymentMonitoringService {
+	
+	@ActiveDB('monitoring')
+	def em;
+
+	@DataContext('payment_partner')
+	def em_paypartner;
+
+	@Service(value='CloudPartnerService', connection='partner')
+	def partnerSvc;
+
+	@Service('DateService')
+	def dtSvc;
+
+
+	@ProxyMethod
+	public def getInitialInfo(params) {
+		def lgus = partnerSvc.getList();
+		def paypartners = em_paypartner.select('name:{objid}').where('1=1').list();
+		paypartners << [name: 'TOTAL'];
+		def partners = em.getPartners().findAll{it.id != '000'};
+		partners.each{  partner ->
+			partner.paypartner = [:] 
+			paypartners.each{ pp -> 
+				partner.paypartner[pp.name.toLowerCase()] = 0;
+			}
+			def lgu = lgus.find{it.id == partner.id}
+			if (lgu) partner.name = lgu.name
+		}
+		buildPeriodFilters(params)
+		def years = getYears()
+		return [
+			partners: partners, 
+			paypartners: paypartners, 
+			period: params.period,
+			years: years,
+			year: years ? years.last() : dtSvc.serverYear,
+		]
+	}
+
+	@ProxyMethod
+	public def getTxnCounts(params) {
+		def paypartners = em_paypartner.select('objid').where('1=1').list();
+
+		buildPeriodFilters(params)
+		def txncounts = [];
+		def counts = em.getTxnCounts(params);
+		def groupByOrgCode = counts.groupBy{it.orgcode}
+		groupByOrgCode.each{k, items -> 
+			def txncount = [id: k, paypartner: [:]]
+			paypartners.each{
+				txncount.paypartner[it.objid.toLowerCase()] = 0;
+			}
+			items.each{
+				txncount.paypartner[it.paypartnerid.toLowerCase()] = it.txncount
+			}
+			txncounts << txncount;
+		}
+
+		def info = getInitialInfo([:]);
+		def partners = info.partners;
+		txncounts.each{txn -> 
+			def partner = partners.find{it.id == txn.id};
+			if (partner) {
+				partner.paypartner = txn.paypartner;
+			}
+		}
+		calcTotals(partners);
+		partners = sortPartnersByTxnCounts(partners);
+		partners << getTotalRow(partners, params)
+		return partners;
+	}
+
+	def calcTotals(partners) {
+		partners.each {partner ->
+			def total = 0;
+			partner.paypartner.each{k, v -> total += v}
+			partner.paypartner.total = total;
+		}
+		partners.sort{a, b -> (a.paypartner.total <=> b.paypartner.total) * (-1)}
+	}
+
+	def getMonth(monthidx) {
+		def months = dtSvc.getMonths();
+		def month = months.find{ it.index == monthidx};
+		return month.caption;
+	}
+
+	void buildPeriodFilters(params) {
+		if (!params.month) return;
+
+		def currdate = dtSvc.parseCurrentDate()
+		if (params.year) {
+			params.year = toInt(params.year)
+		} else {
+			params.year = currdate.year
+		}
+
+		params.period = ""
+		if (params.month.idx != 0) {
+			def month = params.month.idx.toString().padLeft(2, "0");
+			def pdate = dtSvc.parseDate(params.year + '-' + month + '-01', null);
+			params.period = "Month of " + getMonth(pdate.month) + ", " + pdate.year
+			params.fromdate = pdate.date
+			params.todate = dtSvc.getMonthEndDate(params.fromdate) + 1;
+		} else if (params.year == currdate.year) {
+			params.period = 'As of ' + dtSvc.format('MMMMM dd, yyyy', currdate.date)
+			params.fromdate = dtSvc.parseDate(params.year + '-01-01', null).date;
+			params.todate = currdate.date
+		} else {
+			params.period = 'For the year ' + params.year
+			params.fromdate = dtSvc.parseDate(params.year + '-01-01', null).date;
+			params.todate = dtSvc.parseDate((params.year+1) + '-01-01', null).date;
+		}
+	}
+
+	def toInt(val) {
+		if (val instanceof Number) return val;
+		try {
+			return Integer.parseInt(val);
+		} catch( e ) {
+			throw new Exception('Invalid year');
+		}
+	}
+
+	def getYears() {
+		def yr = em.findYearRange();
+		def years = []
+		if (yr.minyear == yr.maxyear) {
+			years << yr.minyear
+		} else {
+			yr.minyear.upto(yr.maxyear) {
+				years << it	
+			}	
+		}
+		return years 
+	}
+
+	def sortPartnersByTxnCounts(partners) {
+		def p1 = partners.findAll{ it.paypartner.total > 0}
+		def p2 = partners.findAll{ it.paypartner.total == 0}
+		p1.sort{a, b -> 
+			if (a.paypartner.total < b.paypartner.total) return 1;
+			if (a.paypartner.total > b.paypartner.total) return -1;
+			return 0;
+		}
+		p2.sort{a, b ->
+			if (a.name < b.name) return -1;
+          	if (a.name > b.name) return 1;
+          	return 0;
+		}
+		return p1 + p2;
+	}
+
+	def getTotalRow(partners, params) {
+		def total = [
+			id : 'total',
+			name: 'TOTAL',
+			paypartner: [total: 0]
+		]
+
+		def paypartners = em.getTotalTxnCounts(params)
+		paypartners.each{cnt -> 
+			total.paypartner[cnt.paypartnerid.toLowerCase()] = cnt.txncount;
+			total.paypartner.total += cnt.txncount;
+		}
+		return total;
+	}
+} 
