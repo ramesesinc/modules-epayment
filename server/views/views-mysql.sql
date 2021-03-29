@@ -18,7 +18,8 @@ select
   cri.item_code AS acctcode, 
   cri.item_title AS acctname, 
   cri.remarks AS remarks, 
-  cri.amount as amount 
+  cri.amount as amount,
+  c.txntype as txntype  
 from eor_remittance r 
   inner join eor c on c.remittanceid = r.objid 
   inner join eor_item cri on cri.parentid = c.objid 
@@ -45,7 +46,8 @@ select
   cri.payableitem_objid AS acctid, 
   cri.payableitem_code AS acctcode, 
   cri.payableitem_title AS acctname, 
-  cri.share as amount 
+  cri.share as amount, 
+  c.txntype as txntype 
 from eor_remittance r 
   inner join eor c on c.remittanceid = r.objid 
   inner join eor_share cri on cri.parentid = c.objid 
