@@ -6,7 +6,17 @@ from payment_partner_option
 select 
 	pp.orgcode,
 	p.paypartnerid,
-	count(*) as txncount
+	count(*) as value
+from paymentorder_paid pp 
+inner join payment p on pp.objid = p.paymentrefid
+where p.txndate >= $P{fromdate} and p.txndate < $P{todate}
+group by pp.orgcode, paypartnerid
+
+[getTxnAmounts]
+select 
+	pp.orgcode,
+	p.paypartnerid,
+	sum(pp.amount) as value
 from paymentorder_paid pp 
 inner join payment p on pp.objid = p.paymentrefid
 where p.txndate >= $P{fromdate} and p.txndate < $P{todate}
@@ -15,7 +25,17 @@ group by pp.orgcode, paypartnerid
 [getTotalTxnCounts]
 select 
 	p.paypartnerid,
-	count(*) as txncount
+	count(*) as total
+from paymentorder_paid pp 
+inner join payment p on pp.objid = p.paymentrefid
+where p.txndate >= $P{fromdate} and p.txndate < $P{todate}
+and pp.orgcode <> '000'
+group by paypartnerid
+
+[getTotalTxnAmounts]
+select 
+	p.paypartnerid,
+	sum(pp.amount) as total
 from paymentorder_paid pp 
 inner join payment p on pp.objid = p.paymentrefid
 where p.txndate >= $P{fromdate} and p.txndate < $P{todate}

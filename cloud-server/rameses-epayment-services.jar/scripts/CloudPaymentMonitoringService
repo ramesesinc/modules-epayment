@@ -41,27 +41,32 @@ class CloudPaymentMonitoringService {
 	}
 
 	@ProxyMethod
-	public def getTxnCounts(params) {
+	public def getTxnInfo(params) {
 		def paypartners = em_paypartner.select('objid').where('1=1').list();
 
 		buildPeriodFilters(params)
-		def txncounts = [];
-		def counts = em.getTxnCounts(params);
-		def groupByOrgCode = counts.groupBy{it.orgcode}
+		def txninfos = [];
+		def infos = [];
+		if (params.measurement && params.measurement.name == "amount") {
+			infos = em.getTxnAmounts(params);
+		} else {
+			infos = em.getTxnCounts(params);
+		}
+		def groupByOrgCode = infos.groupBy{it.orgcode}
 		groupByOrgCode.each{k, items -> 
-			def txncount = [id: k, paypartner: [:]]
+			def txninfo = [id: k, paypartner: [:]]
 			paypartners.each{
-				txncount.paypartner[it.objid.toLowerCase()] = 0;
+				txninfo.paypartner[it.objid.toLowerCase()] = 0;
 			}
 			items.each{
-				txncount.paypartner[it.paypartnerid.toLowerCase()] = it.txncount
+				txninfo.paypartner[it.paypartnerid.toLowerCase()] = it.value
 			}
-			txncounts << txncount;
+			txninfos << txninfo;
 		}
 
 		def info = getInitialInfo([:]);
 		def partners = info.partners;
-		txncounts.each{txn -> 
+		txninfos.each{txn -> 
 			def partner = partners.find{it.id == txn.id};
 			if (partner) {
 				partner.paypartner = txn.paypartner;
@@ -161,10 +166,16 @@ class CloudPaymentMonitoringService {
 			paypartner: [total: 0]
 		]
 
-		def paypartners = em.getTotalTxnCounts(params)
+		def paypartners = []
+		if (params.measurement && params.measurement.name == "amount") {
+			paypartners = em.getTotalTxnAmounts(params)
+		} else {
+			paypartners = em.getTotalTxnCounts(params)
+		}
+
 		paypartners.each{cnt -> 
-			total.paypartner[cnt.paypartnerid.toLowerCase()] = cnt.txncount;
-			total.paypartner.total += cnt.txncount;
+			total.paypartner[cnt.paypartnerid.toLowerCase()] = cnt.total;
+			total.paypartner.total += cnt.total;
 		}
 		return total;
 	}

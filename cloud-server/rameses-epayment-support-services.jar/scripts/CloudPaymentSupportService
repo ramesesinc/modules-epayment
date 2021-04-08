@@ -44,10 +44,6 @@ class CloudPaymentSupportService {
 
 		findby.controlno = param.controlno; 
 
-		po_db.debug = true; 
-		po_paid_db.debug = true; 
-		po_cancelled_db.debug = true; 
-		paypartner_db.debug = true; 
 		
 		def po = po_paid_db.find( findby ).first();
 		if ( !po ) {

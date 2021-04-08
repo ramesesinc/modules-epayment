@@ -4,14 +4,24 @@ import com.rameses.annotations.*;
 // Landbank services
 //***********************
 class LbpPaymentPartnerOptionInterceptor {
+
+	final String PAY_PARTNER_ID = "LBP";
 	
+
+	@Service('CloudPaymentService')
+	def cloudPaymentSvc; 
+
+	@Service('DateService')
+	def dateSvc; 
+
+
 	def formatter = new java.text.DecimalFormat('0.00');
 
 
 	@Before(pattern="CloudPaymentService.postPartnerPayment", eval="#{args[0].statusid == 'landbanksuccess' }")
 	public void beforePostPartnerPayment(evt) { 
 		def m = evt.args[0];
-		m.paypartnerid = 'LBP'; 
+		m.paypartnerid = PAY_PARTNER_ID; 
 		m.paymentrefid = m.MerchantRefNo; 
 	}
 
@@ -29,7 +39,14 @@ class LbpPaymentPartnerOptionInterceptor {
 		def params = [:];
 		params.MerchantCode = partner.info?.merchantcode; 
 		params.MerchantRefNo = po.objid; 
-		params.Particulars = "Transaction_type=${po.txntypename};Name of Payor=${paidbystr};Tax Reference Number=${po.objid};Remarks=NA".toString(); 
+
+		def parbuff = new StringBuilder(); 
+		parbuff.append("Transaction_type=${po.txntypename};Name of Payor=${paidbystr};Tax Reference Number=${po.objid};Remarks=NA");
+		if ( po.email ) { 
+			parbuff.append(";Email Address=${po.email}"); 
+		}
+
+		params.Particulars = parbuff.toString(); 
 
 		if ( partner.info?.particulars ) {
 			params.Particulars = evalExpr( partner.info.particulars, [ txntype: po.txntypename, paidby: paidbystr, refno: po.objid ]); 
@@ -37,13 +54,13 @@ class LbpPaymentPartnerOptionInterceptor {
 
 		params.Amount = samt;
 		params.PayorName = po.paidby;
-		params.PayorEmail = ( po.paidbyemail ? po.paidbyemail : '');
+		params.PayorEmail = ( po.email ? po.email : '');
 		params.ReturnURLOK = ( partner.info?.testsuccessurl ? partner.info?.testsuccessurl : partner.info?.successurl ); 
 		params.ReturnURLError = ( partner.info?.testerrorurl ? partner.info?.testerrorurl : partner.info?.errorurl ); 
 
 		def secval = partner.info?.merchantcode + po.objid + samt.replace('.','');
     	params.Hash = com.rameses.util.Encoder.MD5.encode(secval).toLowerCase();
-		println 'LBP getPaymentPartnerOption params => ' + params; 
+		log('getPaymentPartnerOption params => ' + params); 
 		partner.params = params; 
 	}
 
@@ -52,7 +69,7 @@ class LbpPaymentPartnerOptionInterceptor {
 		def params = evt.args[0]; 
 		def pmt = evt.result;
 
-		pmt.paypartnerid = 'LBP'; 
+		pmt.paypartnerid = PAY_PARTNER_ID;
 		pmt.traceid = params.EppRefNo;
 		pmt.tracedate = params.Datestamp;
 		pmt.amount = params.Amount;
@@ -62,6 +79,33 @@ class LbpPaymentPartnerOptionInterceptor {
 			pmt.paymentrefid = particulars['Tax Reference Number'];
 		}
 	} 	
+
+	@After(pattern="CloudPaymentService.postPartnerWebhook", eval="#{args[0]?.paypartnerid.toString().toLowerCase() == 'lbp'}") 
+	public void afterPostPartnerWebhook(evt) { 
+		def result = evt.result;
+		def param = evt.args[0];
+		def data = param.data;
+
+		log('afterPostPartnerWebhook');
+		param.each{
+			println '> '+ it; 
+		}
+
+		data.paypartnerid = PAY_PARTNER_ID;
+		data.paymentrefid = data.MerchantRefNo;
+		if ( !data.Datestamp ) { 
+			data.Datestamp = dateSvc.getServerDate(); 
+		} 
+
+		data = cloudPaymentSvc.postPartnerPayment( data ); 
+		if ( data?.reposted.toString().matches('true|1')) {
+			log('WEBHOOK [INFO] payment reposted.');	
+		} 
+		else {
+			log('WEBHOOK [INFO] post partner payment completed.'); 
+		}
+	}
+
 
 	def splitParticulars( value ) { 
 		if ( value == null || value.toString().trim().length() == 0 ) return null;
@@ -76,9 +120,13 @@ class LbpPaymentPartnerOptionInterceptor {
 		return data;
 	}
 
-	String evalExpr( str, data ) {
-		def engine = new groovy.text.SimpleTemplateEngine()
+	String evalExpr( str, data ) { 
+		def engine = new groovy.text.SimpleTemplateEngine(); 
 		def template = engine.createTemplate( str ).make( data ); 
 		return template.toString(); 
 	} 
+
+	void log( msg ) {
+		println (''+ PAY_PARTNER_ID +': '+ msg);
+	}
 }

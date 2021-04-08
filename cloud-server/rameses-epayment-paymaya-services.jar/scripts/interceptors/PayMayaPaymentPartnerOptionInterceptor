@@ -35,17 +35,18 @@ class PayMayaPaymentPartnerOptionInterceptor {
 	@After(pattern="CloudPaymentService.getPaymentPartnerOption", eval="#{result.paypartnerid.toLowerCase() == 'paymaya' }")
 	public void buildPaymentPartnerOption(evt) { 
 		def po = evt.args[0].paymentorder
+		def checkout = evt.args[0].checkout
 		def partner = evt.result.paypartner
 
 		def params = [:]
 		params.requestReferenceNumber = po.objid
-		params.totalAmount = getTotalAmount(po)
+		params.totalAmount = getTotalAmount(po, checkout)
 		params.buyer = getBuyerInfo(po)
-		params.items = getItems(po)
-		params.redirectUrl = getRedirectUrl(partner, po)
+		params.items = getItems(po, checkout)
+		params.redirectUrl = getRedirectUrl(partner, po, checkout)
 		params.metadata = [:]
 		partner.params = params 
-		checkOut(partner, po)
+		checkOut(partner, po, checkout)
 	}
 
 	@After( pattern="CloudPaymentService.getPostPaymentParams", eval="#{args[0]?.paypartnerid.toString().toLowerCase() == 'paymaya'}") 
@@ -101,36 +102,49 @@ class PayMayaPaymentPartnerOptionInterceptor {
 		}
 	}
 
-	void checkOut(partner, po) {
-		def urlPath = partner.actionurl
+	void checkOut(partner, po, checkout) {
+		def option = partner.info[checkout.type];
+		def urlPath = option.actionurl
 		def jsonData = JsonUtil.toString(partner.params)
 
 		System.setProperty("https.protocols", "TLSv1,TLSv1.1,TLSv1.2"); 
 
 		def http = new BasicHttpClient()
-		def retval = http.post(urlPath, jsonData, partner.info.headerpost)
+		def retval = http.post(urlPath, jsonData, option.headerpost)
 		if (retval.responsecode == 200) {
 			partner.checkout = JsonUtil.toMap(retval.data)
-			em_po.find([objid: po.objid]).update([checkoutid: partner.checkout.checkoutId])
+			if ('card'.equalsIgnoreCase(checkout.type)) {
+				em_po.find([objid: po.objid]).update([checkoutid: partner.checkout.checkoutId, checkouttype: checkout.type])
+			} else if ('wallet'.equalsIgnoreCase(checkout.type)) {
+				em_po.find([objid: po.objid]).update([checkoutid: partner.checkout.paymentId, checkouttype: checkout.type])
+			}
 		} else {
 			partner.error = JsonUtil.toMap(retval.error)
 			partner.error.errormsg = partner.error.error
+			println 'ERROR => ' + partner.error
 		}
 	}
 
 	def getPaymentDetail(partner, args) {
-		def po = em_po.select("checkoutid").find([ objid: args.paymentrefid ]).first()
-		def urlPath = partner.actionurl + "/" + po.checkoutid
+		def po = em_po.select("checkoutid,checkouttype").find([ objid: args.paymentrefid ]).first();
+		if ( po ) {
+			def option = partner.info[po.checkouttype]
+			def urlPath = option.actionurl + "/" + po.checkoutid
+		}
 		return [requestReferenceNumber: args.paymentrefid];
 	}
 
-	def getTotalAmount(po) {
+	def getTotalAmount(po, checkout) {
 		def amount = po.amount
-		def webfee = (po.webfee ? po.webfee : 0.00)
+		def fee = checkout && checkout.fee ? checkout.fee : 0.0
+		
 		def totalAmount = [
 			currency: 'PHP',
-			value: (amount + webfee),
-			details: [po: amount, webfee: webfee, subtotal: (amount+webfee)]
+			value: amount + fee,
+			details: [
+				serviceCharge: fee, 
+				subtotal: amount,
+			]
 		]
 		return totalAmount
 	}
@@ -142,19 +156,35 @@ class PayMayaPaymentPartnerOptionInterceptor {
 		]
 	}
 
-	def getItems(po) {
+	def getItems(po, checkout) {
+		def amount = po.amount
+		def fee = checkout && checkout.fee ? checkout.fee : 0.0
+
 		def item = [
 			name: po.txntypename,
 			description: po.txntypename,
 			quantity: '1',
 			txnno: po.objid,
-			amount: [value: po.amount],
-			totalAmount: [value: po.amount, details: [subtotal: po.amount]]
+			amount: [
+				value: amount + fee,
+				details: [
+					amount: amount, 
+					serviceCharge: fee,
+					subtotal: amount,
+				]
+			],
+			totalAmount: [
+				value: amount + fee, 
+				details: [
+					serviceCharge: fee,
+					subtotal: amount,
+				]
+			]
 		]
 		return [item]
 	}
 
-	def getRedirectUrl(partner, po) {
+	def getRedirectUrl(partner, po, checout) {
 		def success = (partner.info?.testsuccessurl ? partner.info?.testsuccessurl : partner.info?.successurl) + '?paymentrefid=' + po.objid
 		def failure = (partner.info?.testerrorurl ? partner.info?.testerrorurl : partner.info?.errorurl) + '?paymentrefid=' + po.objid
 		def cancel = (partner.info?.testcancelurl ? partner.info?.testcancelurl : partner.info?.cancelurl) + '?paymentrefid=' + po.objid

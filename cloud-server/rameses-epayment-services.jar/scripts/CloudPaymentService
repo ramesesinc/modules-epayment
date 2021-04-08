@@ -67,7 +67,11 @@ class CloudPaymentService {
 	@ProxyMethod
 	public def getPayPartner(def params)  {
 		def po = getPaymentOrder(params)
-		def p = [paymentorder: po, payoption: params.payoption]
+		def p = [
+			paymentorder: po, 
+			payoption: params.payoption, 
+			checkout: params.checkout,
+		]
 		def payoption = self.getPaymentPartnerOption(p);
 
 		def formaction = payoption.paypartner?.info?.testactionurl; 
@@ -114,8 +118,42 @@ class CloudPaymentService {
 		if ( !parms.paypartnerid ) throw new Exception("paypartnerid is required in postPayment"); 
 		if ( !parms.paymentrefid ) throw new Exception("paymentrefid is required in postPayment"); 
 
-		po_db.debug = true;
+		// initiate record locking 
+		def lockid = new java.rmi.server.UID().toString(); 
+		po_db.updateLock([ objid: parms.paymentrefid, lockid: lockid ]); 
+
 		def po = po_db.find([ objid: parms.paymentrefid ]).first(); 
+		if ( po == null ) { 
+			println '\n** find PO '+ parms.paymentrefid +' from paid table'; 
+
+			po_paid_db.updateLock([ objid: parms.paymentrefid, lockid: lockid ]); 
+
+			// since pending PO is not found 
+			// we will verify the payment record 
+			def ppmt = pay_db.find([ paymentrefid: parms.paymentrefid, paypartnerid: parms.paypartnerid ]).first(); 
+			println '\n** Payment record ==> '+ ppmt; 
+			if ( ppmt?.objid ) {
+				// PO is already paid
+
+				def pp = paypartner_db.select('objid,code').find([ objid: parms.paypartnerid ]).first();
+				ppmt.partner = pp; 
+				ppmt.partnerid = pp.objid; 
+				ppmt.partnercode = pp.code; 
+
+				po = po_paid_db.find([ objid: ppmt.paymentrefid ]).first(); 
+				ppmt.info = po; 
+				ppmt.refno = po.refno; 
+				ppmt.origin = po.origin;
+				ppmt.txntype = po.txntype; 
+				ppmt.txntypename = po.txntypename; 
+
+				ppmt.action = "epayment:post-payment";
+				ppmt.reposted = true; 
+				return ppmt; 
+			} 
+		}
+
+
 		println '\n** po '
 		po.each{
 			println '> '+ it; 
@@ -150,17 +188,16 @@ class CloudPaymentService {
 			po.particulars = po.txntypename;
 		}
 
-		println '** transfer to po paid table...';
-		//transfer to paymentorder_paid 
+		println '** transfer PO to paid...';
 		po_paid_db.create( po );
-		println '** delete po...';
-		po_db.find([ objid: po.objid ]).delete();
 
-		println '** create payment...';
-		//we use partnerid to refer to pay partner so as not to disrupt existing code in the lgu.
+		println '** create Payment record...';
 		def pay = pay_db.create( pmt );
 
-		pay.txntype = po.txntype
+		println '** delete PO...';
+		po_db.find([ objid: po.objid ]).delete();
+
+		pay.txntype = po.txntype;
 		pay.orgcode	= orgcode; 
 		pay.partnerid = payPartner.objid; 
 		pay.partnercode = payPartner.code;
