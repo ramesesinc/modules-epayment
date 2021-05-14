@@ -1,0 +1,184 @@
+import com.rameses.annotations.*; 
+import com.rameses.http.BasicHttpClient;
+import com.rameses.osiris3.server.JsonUtil;
+
+class GCashOrderQueryService {
+
+	@Service('DateService')
+	def dateSvc; 
+
+	@Service('GCashSignatureService')
+	def sigSvc; 
+
+
+	@DataContext('paymentorder')
+	def po_db;
+
+	@DataContext('paymentorder_paid')
+	def po_paid_db;
+
+	@DataContext('paymentorder_cancelled')
+	def po_cancelled_db;
+
+	@DataContext('payment_partner_option')
+	def partner_option_db;
+
+	@DataContext('gcash_log')
+	def log_db;
+
+
+	@ProxyMethod 
+	public def query( param ) {
+		if ( !param.paymentrefid )
+			throw new Exception('paymentrefid parameter is required');
+
+		def po = param.po; 
+		if ( !po ) po = findPO( param.paymentrefid ); 
+		if ( !po ) throw new Exception('payment order not found');
+
+		if ( po.status.toString() == 'CANCELLED' ) 
+			throw new Exception('payment order status is CANCELLED');
+
+		def partner = param.partner; 
+		if ( !partner ) {
+			def m = [ paypartnerid: 'GCASH' ];
+			partner = partner_option_db.find([ partnerid: po.orgcode ]).where('paypartner.objid = :paypartnerid', m ).first(); 
+			if ( !partner ) 
+				throw new Exception(''+ po.orgcode +'_'+ m.paypartnerid +' paypartner option not found'); 
+		} 
+
+		if ( !partner.info )
+			throw new Exception(''+ po.orgcode +'_'+ m.paypartnerid +' paypartner info not found');
+
+		def wallet = partner.info.wallet; 
+		if ( !wallet ) throw new Exception('partner.info.wallet is required'); 
+		if ( !wallet.queryapi ) throw new Exception('partner.info.wallet.queryapi is required'); 
+
+		def queryapi = wallet.queryapi; 
+		if ( !queryapi.function ) throw new Exception('partner.info.wallet.queryapi.function is required'); 
+		if ( !queryapi.url ) throw new Exception('partner.info.wallet.queryapi.url is required'); 
+
+		def data = [:]; 
+		data.request = [:]; 
+		data.request.head = createHead([ info: wallet?.head ]); 
+		data.request.head.function = queryapi.function; 
+
+		data.request.body = createBody([ info: wallet?.body, preInfo: [ merchantTransId: po.objid ]]); 
+
+		data.signature = sigSvc.getSignature( data.request ); 
+
+		queryapi.fullResult = ( param.fullResult.toString() == '1' ); 
+		return postData( queryapi, data, wallet?.headerpost ); 
+	}
+
+	@ProxyMethod 
+	public def createHead( param ) {
+		def newhead = [:]; 
+		if ( param.preInfo ) newhead.putAll( param.preInfo ); 
+		
+		copyInfo( param?.info, ['version','function','clientId','clientSecret'], newhead ); 
+
+		newhead.reqMsgId = param.reqMsgId; 
+		if ( !newhead.reqMsgId ) { 
+			newhead.reqMsgId = new java.rmi.server.UID().toString(); 
+		} 
+		
+		if ( param.txndate instanceof java.util.Date ) {
+			newhead.reqTime = formatDateTime( param.txndate ); 
+		}
+		else { 
+			newhead.reqTime = formatDateTime( dateSvc.getServerDate()); 
+		}
+
+		if ( param.postInfo ) newhead.putAll( param.postInfo ); 
+		return newhead; 
+	} 
+
+	@ProxyMethod 
+	public def createBody( param ) {
+		def newbody = [:]; 
+		if ( param.preInfo ) newbody.putAll( param.preInfo ); 
+
+		copyInfo( param?.info, ['merchantId'], newbody ); 
+
+		if ( param.postInfo ) newbody.putAll( param.postInfo ); 
+		return newbody; 
+	} 
+
+
+	def findPO( paymentrefid ) {
+		def param = [ objid: paymentrefid ]; 
+		def po = po_db.find( param ).first(); 
+		if ( po ) {
+			po.status = 'OPEN'; 
+			return po; 
+		} 
+
+		po = po_paid_db.find( param ).first(); 
+		if ( po ) {
+			po.status = 'PAID'; 
+			return po; 
+		}
+		
+		po = po_paid_db.find( param ).first(); 
+		if ( po ) {
+			po.status = 'CANCELLED'; 
+			return po; 
+		}
+
+		return null;  
+	}
+
+	void copyInfo( source, keys, target ) {
+		if ( !source || !keys ) return;
+		if ( target == null ) return; 
+
+		keys.each{
+			target.put( it, source.get( it )); 
+		}
+	}
+
+	def formatDateTime( txndate ) {
+		return String.format('%1$tY-%1$tm-%1$tdT%1$tH:%1$tM:%1$tS+08:00', txndate);
+	}
+
+	void logH( message ) {
+		println '\n'+ getClass().getSimpleName() +': '+ message; 
+	}
+
+	def postData( queryapi, data, headerParam ) {
+		def jsonreq = JsonUtil.toString( data ); 
+		logH( 'json-req -> '+ jsonreq ); 
+
+		def merchantTransId = data.request.body.merchantTransId; 
+
+		System.setProperty("https.protocols", "TLSv1,TLSv1.1,TLSv1.2"); 
+
+		if ( headerParam == null ) {
+			headerParam = [:]; 
+		}
+
+		def jsonres = null; 
+		def http = new BasicHttpClient()
+		def res = http.post( queryapi.url, jsonreq, headerParam ); 
+		if ( res.responsecode == 200 ) {
+			jsonres = res.data;
+			logH( 'json-res -> '+ jsonres ); 
+
+			log_db.create([ 
+				poid: merchantTransId, txntype: 'query',  
+				txndate: dateSvc.getServerDate(), 
+				info: [ request: jsonreq, response: jsonres ] 
+			]); 
+
+			data = JsonUtil.toMap( jsonres ); 
+			// sigSvc.validateCheckout( data ); 
+			if ( queryapi.fullResult ) { 
+				return [ data: data, jsonreq: jsonreq, jsonres: jsonres ]; 
+			}
+			return data; 
+		} 
+
+		throw new Exception( res.error.error ); 
+	}
+} 

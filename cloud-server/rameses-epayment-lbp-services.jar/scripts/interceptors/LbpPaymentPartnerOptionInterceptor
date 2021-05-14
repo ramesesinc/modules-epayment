@@ -86,7 +86,7 @@ class LbpPaymentPartnerOptionInterceptor {
 		def param = evt.args[0];
 		def data = param.data;
 
-		log('afterPostPartnerWebhook');
+		log('afterPostPartnerWebhook (param)');
 		param.each{
 			println '> '+ it; 
 		}

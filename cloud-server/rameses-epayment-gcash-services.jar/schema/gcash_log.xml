@@ -1,0 +1,10 @@
+<schema>
+	<element tablename="gcash_log">
+		<field name="objid" primary="true" prefix="GCASHLOG"/>	
+		<field name="poid" required="true" />
+		<field name="txndate" required="true" type="timestamp" />
+		<field name="txntype" required="true" />
+
+		<complex name="info" required="false" serializer="default" />
+	</element>
+</schema>

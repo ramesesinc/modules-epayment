@@ -74,9 +74,17 @@ class CloudPaymentService {
 		]
 		def payoption = self.getPaymentPartnerOption(p);
 
+		println '\n** getPayPartner (payoption)'
+		payoption.each{
+			println '> '+ it;
+		}
+
 		def formaction = payoption.paypartner?.info?.testactionurl; 
 		if (payoption.paypartner?.checkout) {
 			formaction = payoption.paypartner.checkout.redirectUrl;
+			if ( !formaction ) 
+				throw new Exception("checkout.redirectUrl must be set when providing a checkout data");  
+
 			def tokens = formaction.split("=");
 			payoption.paypartner.id = tokens[1];
 			payoption.paypartner.isredirect = true;
@@ -124,14 +132,12 @@ class CloudPaymentService {
 
 		def po = po_db.find([ objid: parms.paymentrefid ]).first(); 
 		if ( po == null ) { 
-			println '\n** find PO '+ parms.paymentrefid +' from paid table'; 
 
 			po_paid_db.updateLock([ objid: parms.paymentrefid, lockid: lockid ]); 
 
 			// since pending PO is not found 
 			// we will verify the payment record 
 			def ppmt = pay_db.find([ paymentrefid: parms.paymentrefid, paypartnerid: parms.paypartnerid ]).first(); 
-			println '\n** Payment record ==> '+ ppmt; 
 			if ( ppmt?.objid ) {
 				// PO is already paid
 
@@ -188,13 +194,11 @@ class CloudPaymentService {
 			po.particulars = po.txntypename;
 		}
 
-		println '** transfer PO to paid...';
 		po_paid_db.create( po );
+		po_paid_db.updateLock([ objid: po.objid, lockid: lockid ]); 		
 
-		println '** create Payment record...';
 		def pay = pay_db.create( pmt );
 
-		println '** delete PO...';
 		po_db.find([ objid: po.objid ]).delete();
 
 		pay.txntype = po.txntype;
@@ -207,9 +211,6 @@ class CloudPaymentService {
 
 		pay.action = "epayment:post-payment";
 		println '\n** gdx.send '
-		pay.each{
-			println '> '+ it; 
-		} 
 		gdx.send( pay, orgcode );
 
 		//This is returned to give feedback to the web page.
@@ -268,10 +269,16 @@ class CloudPaymentService {
 	}
 
 	@ProxyMethod
-	public def postPartnerWebhook(params) {
+	public def postPartnerWebhook(params) { 
+		def po = po_db.find([ objid: params.paymentrefid.toString() ]).first(); 
+		if ( !po ) {
+			po = po_paid_db.find([ objid: params.paymentrefid.toString() ]).first(); 
+		}
+
 		return [
-			paypartnerid: params.paypartnerid,
-			status: 200,
+			po: po, 
+			status: 200, 
+			paypartnerid: params.paypartnerid 
 		];
 	}
 

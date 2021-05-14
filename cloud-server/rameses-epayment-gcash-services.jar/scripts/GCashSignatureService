@@ -1,0 +1,103 @@
+import com.rameses.annotations.*;
+import com.rameses.common.*;
+import com.rameses.osiris3.server.JsonUtil;
+
+import java.security.KeyFactory;
+import java.security.Signature;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.HashMap;
+import java.util.Map;
+import org.apache.commons.net.util.Base64;
+
+class GCashSignatureService {
+
+	def RSI_PRIVATE_KEY = '' + 
+		'MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7pRZ1+QBUidvz' + 
+		'JyIx8KOzKVe+gp76bQceCvw6xv0eOjuhzsSjiYbkG5GZ/oonXJyLnwvl8Ops7sVt' + 
+		'pchRaJNTUbxTDo4raYFblFyDLFslc/lMAQ7H1Uf0SMLt5vjwMjx42jvTQFpeRyWg' + 
+		'cMSqiNXUtfnGRz/sHrbfY/m4lNAkTb1bjk2Fg0VZ3YdTD3AxdO8PXTPXj8RH0wxV' +  
+		'0nf2fMDfeazklauHTSexpGkPKLfupkXTyYRRBF3MmTqc43t2Y6xjZN3QDMJbk/M/' +  
+		'xYvcUGr0kDc3tibIYKkEQLAMz2qKezaD0+JbozrS6VxEYLmB7JwnbXIhxBt6CtTv' +  
+		'neNJ97o5AgMBAAECggEAZhNZU5W/wz03RF+eb3JLatPronwmBW6393TcXxEOcpoV' +  
+		'BGGZgKj4kzAYFaBtARqVIjLD4zMaI2YESjBr9zUfJ60H+Fqrphv/vZTIeqbvckFT' +  
+		'dTACHVz9hnrqZ0ZFV0zMrqVw8+tG/ZBQfKW7plVHlS3lESKDOGxA6ObW2r1BOO2O' +  
+		'lFPka2mEKj12Bb2LMEhiuyzSz5zH2IseQYlVakscMEyl93BCm+Njeq7SjAR4tqqX' +  
+		'JUVvxthrn8dtmREas2h2/vkcTX9hvEO4ZvzJXudV+PciElUt4EMTfyDs1oDKTnBG' +  
+		'I0D3OHPI9geq+oWFfH+/fa85xhxiU/HyCyaYTKsF3QKBgQDkQvXrkzlVVuZAnxlR' +  
+		'jjcdyRogPdze5HnYtRjcCLy3AYx6Di+lrdt5gDMuLOewtmNTSMg055WIncG9gIuJ' +  
+		'zrTJD04cn6FEOkkNIfPbitFtLios2ScyOvWxBXTr+QOREz/kP7ErfFoFaIP7fk7y' +  
+		'gulWZD+37k2SgdD+nruDFFJz9wKBgQDScpLRwVwdcEfgv+YdRkpBH+Q0dqNlkaDj' +  
+		'Zmul+FStExuxHflvgz8lpNsdheGMTJSuBofrcmv6h0slW9SYiAeCdRVjaWTe0i+6' +  
+		'u46EhnwXV+h04LFg0CJhaf50dFJ/IW6ozfCs94yygyhmNUnAQq6nqUtNLHXvlkWO' +  
+		'Ys2DOItXTwKBgEQKDaHFxa5Bc+rJQdPEj3tKaYY4ynCKLCPDf4B+/jmStZvgRKWf' +  
+		'GC+0Xg0ih4FuLFcz97GFYlZRp+FjwrQ2MD9KV59CmeBre0D14OmNDHX978ZkiEF5' +  
+		'v6iflsWL+VsyILZZoebzbyXzjHvXn5K8IO+GfFPILclA9toe2Ifu89DrAoGAEUNU' +  
+		'x+AUrlWHj+gt+DjL3ou/LI6O2MYZbI36RqMYTxpCK0VKMNuTUoMzdjiFR/0ANUZT' +  
+		'3/yC3wo6H9ZomhqOgyUXnBAJNj4HrEm2ZyihBUkwyGWmJ0rrhxIqzWK9YbBcY3yB' +  
+		'Qa8M25fmuHumkR7nNNmuU6ZSBlVNX2C7ewgoZgECgYEA3N2jGSgKjFpQCl+Ox0p/' +  
+		'0bmfmZ6TeSTHuAfF7pEjB8EoDag4SzT/86hG44UVNEMJjyXll+T969IMMziDcB0+' +  
+		'bkjEpLyAKT5alnqSMovaIKv3EOgmhLXBRqVG5Vb+wEBs/Wl5nv7XP6J5ghi87Vom' +  
+		'B+3aA+EbsBi3pZYAq8BX4yo=';
+
+
+	def GCASH_PUBLIC_KEY = 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAgo22hZx9N2EXHh8ZspL/iHYcuL1tSdQ974nTkJHRlKRWNzyQqO6TSYouY+nA0y/WD2Pz2wwKwTDBFW82DNekYgFeKZ2bCrsG3Twi7tn3DbfFGKzXfBzXYv6sggL/1Ej2/ABzMVWIaAo8t9Wo5A+/12nOLQIwxsHXZTUrbCJeZYUAfRQFLyIp2/PxVeVd0bLhtEAAj8aJq8RlSlPYdUIgk+CJ+WVdUs7rhMd09MArgAFwB3iRPbBS4gf7QEswRaBDQ3fTJIYE6xTr53geuv9MAO6B2x0Qt0ctmrdGtjLdsoq2KWmlPXo/GS6uJadwQ+xR9JbudS4eZYKNYTf6zGsvVwIDAQAB';
+	
+	@ProxyMethod
+	public def getSignature( request ) {
+		if ( request instanceof String ) {
+			return signSHA256RSA( request ); 	
+		}
+		
+		def jsonData = JsonUtil.toString( request );
+		return signSHA256RSA( jsonData ); 
+	} 
+
+	@ProxyMethod
+	public def validateCheckout(checkout) {
+		println '\nvalidateCheckout ============================= '
+		def response = checkout.response;
+		def resultInfo = response.body?.resultInfo; 
+		if ( resultInfo && resultInfo.resultCodeId.toString() != '00000000') {
+			throw new Exception(''+ resultInfo.resultCodeId +': '+ resultInfo.resultMsg); 
+		}
+
+		def responseStr = JsonUtil.toString( response ); 
+		println 'responseStr -> '+ responseStr; 
+		println 'signature   -> '+ checkout.signature; 
+		boolean verified = verify( responseStr, checkout.signature ); 
+		if ( !verified ) { 
+			throw new Exception('Signature cannot be verified using the public key');  
+		}  
+		return response; 
+	}
+
+
+    String signSHA256RSA( String plainText ) {
+        byte[] pk_bytes = Base64.decodeBase64( RSI_PRIVATE_KEY ); 
+        PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec( pk_bytes );
+        KeyFactory kf = KeyFactory.getInstance("RSA");
+
+        Signature privateSignature = Signature.getInstance("SHA256withRSA");
+        privateSignature.initSign( kf.generatePrivate( spec ));
+        privateSignature.update( plainText.getBytes("UTF-8"));
+
+		byte[] encbytes = privateSignature.sign(); 
+		String encstr = Base64.encodeBase64String( encbytes ); 
+		return encstr.replaceAll("\\s{1,}",""); 
+    }  
+
+    boolean verify( String plainText, String signature ) {
+    	byte[] bytes = plainText.getBytes("UTF-8"); 
+    	byte[] sigBytes = Base64.decodeBase64( signature );
+
+        byte[] keyBytes = Base64.decodeBase64( GCASH_PUBLIC_KEY );
+        X509EncodedKeySpec spec = new X509EncodedKeySpec( keyBytes );
+        KeyFactory kf = KeyFactory.getInstance("RSA");
+
+        Signature sig = Signature.getInstance("SHA256withRSA");
+        sig.initVerify( kf.generatePublic( spec ));
+        sig.update( bytes );
+        return sig.verify( sigBytes ); 
+    }
+}

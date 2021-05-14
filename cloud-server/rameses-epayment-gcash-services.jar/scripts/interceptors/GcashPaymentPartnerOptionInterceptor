@@ -1,0 +1,349 @@
+import com.rameses.annotations.*
+import com.rameses.services.extended.*
+import com.rameses.osiris3.server.JsonUtil
+import com.rameses.http.BasicHttpClient
+
+//***********************
+// GCash services
+//***********************
+class GcashPaymentPartnerOptionInterceptor {
+
+	@Service('DateService')
+	def dtSvc;
+
+	@Service('NumberService')
+	def numSvc;
+
+	@Service('GCashSignatureService')
+	def signSvc;
+
+	@Service('GCashOrderQueryService')
+	def orderQuerySvc;
+
+	@DataContext('gcash_log')
+	def em_log;
+
+	@DataContext('paymentorder')
+	def em_po;
+
+	@DataContext('paymentorder_paid')
+	def em_po_paid;
+
+	@DataContext('payment_partner')
+	def em_paymentpartner;
+
+	@DataContext('payment_partner_option')
+	def em_partner_option;	
+
+	@Service('CloudPaymentService')
+	def svc;
+
+
+	@Before(pattern="CloudPaymentService.postPartnerPayment", eval="#{args[0].statusid == 'gcashsuccess' }")
+	public void beforePostPartnerPayment(evt) { 
+		def args = evt.args[0];
+
+		println 'beforePostPartnerPayment ========================='
+
+		def partner = em_paymentpartner.find([objid: 'GCASH']).first();
+
+		def pmt = getPaymentDetail(partner, args)
+		args.paypartnerid = partner.objid; 
+		args.paymentrefid = pmt.requestReferenceNumber; 
+	}
+	
+	@After(pattern="CloudPaymentService.getPaymentPartnerOption", eval="#{result.paypartnerid.toLowerCase() == 'gcash' }")
+	public void buildPaymentPartnerOption(evt) { 
+		def po = evt.args[0].paymentorder;
+		def partner = evt.result.paypartner;
+		def checkout = evt.args[0].checkout;
+		if ( checkout == null ) checkout = [:];
+
+		println '\n=== buildPaymentPartnerOption (partner) ====='
+		partner.each{ 
+			println '> '+ it; 
+		}
+
+		def params = [ request: [:] ];
+
+		params.request.head = partner.info.wallet.head;
+		params.request.head.reqTime = formatCurrentTime(po);
+		params.request.head.reqMsgId = createGcashLog([ poid: po.objid, txntype: 'order' ]);
+
+		params.request.body = partner.info.wallet.body;
+		params.request.body.notificationUrls = getNotificationUrls(partner, po);
+		params.request.body.order = getOrder(partner, po, checkout);
+
+		params.signature = signSvc.getSignature(params.request);
+		println '\n=== buildPaymentPartnerOption (params) =====';
+		params.each{ 
+			println '> '+ it; 
+		}
+
+		println '\n=== buildPaymentPartnerOption (checkout) =====';
+		checkout.each{ 
+			println '> '+ it; 
+		}
+
+		println '\n=== buildPaymentPartnerOption (po) =====';
+		po.each{ 
+			println '> '+ it; 
+		}
+
+		partner.params = params;
+		checkOut(partner, po, checkout);
+	}
+
+	@After( pattern="CloudPaymentService.getPostPaymentParams", eval="#{args[0]?.paypartnerid.toString().toLowerCase() == 'gcash'}") 
+	public void buildPostPaymentParams( evt ) {
+		def params = evt.args[0] 
+		def pmt = evt.result
+		def paypartner = pmt.paypartner
+		def po = em_po.find([ objid: params.paymentrefid ]).first(); 
+
+		pmt.paypartnerid = paypartner.objid
+		pmt.traceid = po.checkoutid
+		pmt.tracedate = po.txndate
+		pmt.amount = po.amount
+		pmt.paymentrefid = params.paymentrefid
+	} 	
+
+	@After(pattern="CloudPaymentService.postPartnerWebhook", eval="#{args[0].paypartnerid.equalsIgnoreCase('gcash')}")
+	public void afterPostPartnerWebhook(evt) { 
+		logH('afterPostPartnerWebhook');
+		
+		def args = evt.args[0];
+		def result = evt.result;
+		def data_req_head = args?.data?.request?.head; 
+
+		def po = result.po; 
+		def orgcode = po?.orgcode;
+		logH('afterPostPartnerWebhook: paymentrefid = '+ po?.objid +', orgcode = '+ orgcode +', args -> '+ args);
+
+		def paypartnerid = args.paypartnerid; 
+		def partner = em_partner_option.find([ partnerid: orgcode.toString() ]).where('paypartner.objid = :paypartnerid', [paypartnerid: paypartnerid]).first(); 
+		def wallet = partner?.info?.wallet; 
+
+		if ( !po?.objid ) {
+			// PO not found 
+			def statInfo =  [ resultStatus: 'U', resultCodeId: '00000900', resultCode: 'SYSTEM_ERROR', resultMsg: 'PAYMENT_ORDER_NOT_FOUND' ]; 
+			def response = buildWebhookResponse( wallet, data_req_head, statInfo ); 
+			result.response = [ response: response, signature: signSvc.getSignature( response )]; 
+			result.status = 200; 
+			return; 
+		}
+
+		em_log.create([ poid: po.objid, txntype: 'webhook', txndate: dtSvc.getServerDate(), info: [ request: args?.data ]]); 
+
+		def acquirementStatus = null; 
+		def data_req_body = args?.data?.request?.body; 
+		if ( data_req_body == null ) {
+			// let's check the order status
+			def orderinfo = orderQuerySvc.query([ paymentrefid: po.objid, po: po, partner: partner ]);
+			def resultInfo = orderinfo?.response?.body?.resultInfo; 
+			def resultCodeId = resultInfo?.resultCodeId; 
+			if ( resultCodeId.toString() != '00000000' ) {
+				logH('afterPostPartnerWebhook: paymentrefid = '+ po?.objid +', resultInfo = '+ resultInfo); 
+
+				def response = buildWebhookResponse( wallet, data_req_head, resultInfo ); 
+				result.response = [ response: response, signature: signSvc.getSignature( response )]; 
+				result.status = 200; 
+				return; 
+			} 
+
+			def statusDetail = orderinfo?.response?.body?.statusDetail;
+			logH('afterPostPartnerWebhook: paymentrefid = '+ po?.objid +', statusDetail = '+ statusDetail);	
+			acquirementStatus = statusDetail?.acquirementStatus; 		
+		} 
+		else {
+			acquirementStatus = data_req_body.acquirementStatus; 
+		}
+
+		def statusInfo = null; 
+		if ( acquirementStatus.toString().toUpperCase() == 'SUCCESS' ) {
+			def lockid = new java.rmi.server.UID().toString(); 
+			em_po.updateLock([ objid: po.objid, lockid: lockid ]); 
+			em_po_paid.updateLock([ objid: po.objid, lockid: lockid ]); 
+
+			def paidpo = em_po_paid.find([ objid: po.objid ]).select('objid').first(); 
+			if ( !paidpo ) { 
+				def param = [:]; 
+				param.paypartnerid = 'GCASH'; 
+				param.paymentrefid = po.objid; 
+				param.statusid = 'gcashsuccess'; 
+				svc.postPartnerPayment( param ); 
+			}
+		} 
+		else {
+			def statInfo =  [ 
+				resultStatus: 'U', resultCodeId: '00000900', 
+				resultCode: 'SYSTEM_ERROR', resultMsg: 'acquirementStatus='+ acquirementStatus 
+			]; 
+		}
+
+		def response = buildWebhookResponse( wallet, data_req_head, statusInfo ); 
+		result.response = [ response: response, signature: signSvc.getSignature( response )]; 
+		result.status = 200; 
+	}
+
+	def buildWebhookResponse( wallet, data_req_head, statusInfo ) {
+		def response = [:]; 
+		response.head = orderQuerySvc.createHead([ info: wallet?.head ]); 
+		response.head.function = data_req_head?.function;
+		if ( !response.head.function ) {
+			response.head.function = 'gcash.acquiring.order.finish.notify'; 
+		}
+		response.head.respTime = response.head.remove('reqTime'); 
+		response.head.reqMsgId = data_req_head?.reqMsgId; 
+		if ( !response.head.reqMsgId ) { 
+			response.head.reqMsgId = createGcashLog( po ); 
+		}
+
+		response.body = [:];
+		response.body.resultInfo = statusInfo;
+		if ( response.body.resultInfo == null ) {
+			response.body.resultInfo = [
+				resultStatus: 'S', resultCodeId: '00000000', 
+				resultCode: 'SUCCESS', resultMsg : 'SUCCESS' 
+			]; 
+		}
+		logH('buildWebhookResponse -> '+ response); 
+		return response; 
+	}
+
+	def getPaymentDetail(partner, args) {
+		println '\n=== getPaymentDetail (partner) =======';
+		partner.each{
+			println '> '+ it; 
+		}
+
+		println '\n=== getPaymentDetail (args) =======';
+		args.each{
+			println '> '+ it; 
+		}
+
+		def po = em_po.select("checkoutid,checkouttype").find([ objid: args.paymentrefid ]).first();
+
+		println '\n=== getPaymentDetail (po) =======';
+		po.each{
+			println '> '+ it; 
+		}
+
+		if ( po ) { 
+			if ( !po.checkouttype ) { 
+				po.checkouttype = 'wallet'; 
+			} 
+
+			def option = partner.info[ po.checkouttype ]; 
+			if ( !option ) throw new Exception("partner.info[ "+ po.checkouttype +" ]  config data is not set"); 
+
+			def urlPath = option.actionurl + "/" + po.checkoutid; 
+		}
+		return [ requestReferenceNumber: args.paymentrefid ];
+	}
+
+	void checkOut(partner, po, checkout) {
+		println '\ncheckOut ========================'
+		if ( !checkout.type ) { 
+			checkout.type = 'wallet'; 
+		} 
+
+		def reqMsgId = partner.params?.request?.head?.reqMsgId; 
+
+		def option = partner.info[ checkout.type ]; 
+		def urlPath = option.actionurl; 
+		println 'urlPath => ' + urlPath;
+
+		def jsonreq = JsonUtil.toString( partner.params )
+		println 'json-request => ' + jsonreq;
+
+		System.setProperty("https.protocols", "TLSv1,TLSv1.1,TLSv1.2"); 
+
+		def jsonres = null;
+
+		def http = new BasicHttpClient()
+		def retval = http.post(urlPath, jsonreq, option.headerpost)
+		if ( retval.responsecode == 200 ) {
+			jsonres = retval.data; 
+		} else { 
+			jsonres = retval.error; 
+		}
+
+		println 'json-response => '+ jsonres; 
+		em_log.find([ objid: reqMsgId.toString() ]).update([ info: [request: jsonreq, response: jsonres]]);  
+
+		if ( retval.responsecode == 200 ) {
+			partner.checkout = JsonUtil.toMap( jsonres ); 
+
+			def resp = signSvc.validateCheckout( partner.checkout ); 
+			def transactionId = resp.body.transactionId; 
+
+			partner.checkout.redirectUrl = resp.body.checkoutUrl; 
+
+			em_po.find([ objid: po.objid ]).update([ checkoutid: transactionId, checkouttype: checkout.type ]); 
+		} 
+		else {
+			partner.error = JsonUtil.toMap( jsonres );
+			partner.error.errormsg = partner.error.error;
+			println 'ERROR => ' + partner.error;
+		}
+	}
+
+	// ISO 8601 FORMAT:  2021-04-16T01:49:15+00:00
+	def formatCurrentTime( po ) {
+		def str = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format( po.txndate ); 
+		return (str.substring(0, 22) +":"+ str.substring(22));
+	}
+
+	def createGcashLog( log ) { 
+		if ( !log.txndate ) log.txndate = dtSvc.getServerDate(); 
+
+		return em_log.create( log ).objid; 
+	}
+
+	def getOrder(partner, po, checkout) {
+		def order = [:]
+		
+		order.seller = [:]
+		order.seller.userId = ''
+		order.seller.externalUserId = partner.objid
+		order.seller.externalUserType = partner.objid
+
+		order.buyer = [:]
+		order.buyer.userId = ''
+		order.buyer.externalUserId = 'FILIPIZEN'
+		order.buyer.externalUserType = 'FILIPIZEN'
+
+		order.orderTitle = po.particulars
+		order.orderAmount = ['currency': 'PHP', value: convertAsCentsFormat(getTotalAmount(po, checkout))]
+		order.merchantTransId = po.objid
+
+		println 'amount => ' + order.orderAmount
+		return order
+	}
+
+	def getTotalAmount(po, checkout) {
+		def amount = po.amount
+		def fee = checkout && checkout.fee ? checkout.fee : 0.0
+		return amount + fee;
+	}
+
+	public def convertAsCentsFormat(amount) {
+ 		return numSvc.roundA(amount * 100, 0).toString();
+	}
+
+	def getNotificationUrls(partner, po) {
+		def success = (partner.info?.testsuccessurl ? partner.info?.testsuccessurl : partner.info?.successurl) +'?paymentrefid='+ po.objid;
+		def failure = (partner.info?.testerrorurl ? partner.info?.testerrorurl : partner.info?.errorurl) +'?paymentrefid='+ po.objid;
+		def notification = (partner.info?.testnotificationurl ? partner.info?.testnotificationurl : partner.info?.notificationurl) +'?paymentrefid='+ po.objid +'&notify=1';
+		return [
+			[url: success, type: 'PAY_RETURN'],
+			[url: failure, type: 'CANCEL_RETURN'],
+			[url: notification, type: 'NOTIFICATION']
+		];
+	}
+
+	void logH( message ) {
+		println '\n'+ getClass().getSimpleName() +': '+ message; 
+	}
+}
